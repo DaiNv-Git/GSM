@@ -13,10 +13,9 @@ public class SwaggerConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("My API Documentation")
+                        .title("My Application API")
                         .version("1.0.0")
-                        .description("API docs for my project")
-                        .termsOfService("http://swagger.io/terms/")
+                        .description("Tài liệu API cho ứng dụng Spring Boot")
                         .license(new License().name("Apache 2.0").url("http://springdoc.org")));
     }
 }

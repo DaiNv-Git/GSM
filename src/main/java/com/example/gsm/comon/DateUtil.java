@@ -3,7 +3,6 @@ package com.example.gsm.comon;
 import com.example.gsm.exceptions.BadRequestException;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
-
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 
@@ -56,7 +55,7 @@ public class DateUtil {
             try {
                 return ZonedDateTime.parse(dateStr);
             } catch (Exception e) {
-                log.error("Wrong format date: {}", dateStr);
+                
                 throw new BadRequestException(BAD_EXCEPTION,"Wrong format date: " + dateStr);
             }
         }
@@ -88,7 +87,7 @@ public class DateUtil {
                         .toLocalDateTime();
                 return time.format(newFormat);
             } catch (Exception e) {
-                log.error("Error when convert Date Time.", e);
+                
                 return null;
             }
         }
@@ -99,7 +98,7 @@ public class DateUtil {
             try {
                 return LocalDate.parse(date, formatter);
             } catch (Exception e) {
-                log.error("Error when convert Date Time.", e);
+                
                 return null;
             }
         }
@@ -110,7 +109,7 @@ public class DateUtil {
             try {
                 return date.format(formatter);
             } catch (Exception e) {
-                log.error("Error when convert Date Time.", e);
+                
                 return "";
             }
         }
@@ -121,7 +120,7 @@ public class DateUtil {
             try {
                 return LocalDateTime.parse(date, formatter);
             } catch (Exception e) {
-                log.error("Error when convert Date Time.", e);
+                
                 return null;
             }
         }

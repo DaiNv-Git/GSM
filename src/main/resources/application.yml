@@ -1,7 +1,7 @@
 logging:
   level:
     root: INFO
-    com.example: DEBUG   # log cho project
+    com.example: DEBUG   
     org.springframework.web: WARN
   file:
     name: logs/app.log
@@ -10,3 +10,14 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} - %level - %logger{36} - %msg%n"
 server:
   port: 8081
+spring:
+  data:
+    mongodb:
+      uri: mongodb://14.255.205.10:27017/JapanSim
+springdoc:
+  api-docs:
+    path: /api-docs
+
+
+
+
