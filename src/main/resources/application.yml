@@ -13,11 +13,7 @@ server:
 spring:
   data:
     mongodb:
-      uri: mongodb://14.255.205.10:27017/JapanSim
+      uri: mongodb+srv://DevWork:DevWork@devwork.9mshdom.mongodb.net/JapanSim?retryWrites=true&w=majority&appName=JapanSim
 springdoc:
   api-docs:
     path: /api-docs
-
-
-
-
