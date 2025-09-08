@@ -31,7 +31,6 @@ public class DashboardServiceImpl implements DashboardService {
     private static final String PROXY = "buy.proxy.service";
     private static final List<String> ALL_TYPES = List.of(OTP, RENT, SMS, CALL, PROXY);
 
-    // ========================= DASHBOARD (OVERVIEW + STATUS BOXES) =========================
     @Override
     public DashboardResponse getDashboard(DashboardRequest req) {
         Objects.requireNonNull(req.getTimeType(), "timeType is required");

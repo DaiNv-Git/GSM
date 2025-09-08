@@ -33,5 +33,4 @@ public class DashboardResponse {
         private long fail;
         private String growthPercent;
     }
-
 }
