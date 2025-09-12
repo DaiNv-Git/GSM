@@ -1,9 +1,6 @@
 package com.example.gsm.controller;
 
-import com.example.gsm.dao.DashboardRequest;
-import com.example.gsm.dao.DashboardResponse;
-import com.example.gsm.dao.TypeTotalsRequest;
-import com.example.gsm.dao.TypeTotalsResponse;
+import com.example.gsm.dao.*;
 import com.example.gsm.repositories.DashboardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +16,12 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @PostMapping("/overview")
-    public DashboardResponse getDashboard(@Valid @RequestBody DashboardRequest request) {
+    public ResponseCommon<DashboardResponse> getDashboard(@Valid @RequestBody DashboardRequest request) {
         return dashboardService.getDashboard(request);
     }
 
     @PostMapping("/type-totals")
-    public TypeTotalsResponse getTypeTotals(@Valid @RequestBody TypeTotalsRequest request) {
+    public ResponseCommon<TypeTotalsResponse> getTypeTotals(@Valid @RequestBody TypeTotalsRequest request) {
         return dashboardService.getTypeTotals(request);
     }
 }

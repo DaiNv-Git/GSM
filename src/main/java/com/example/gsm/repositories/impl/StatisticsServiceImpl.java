@@ -1,5 +1,6 @@
 package com.example.gsm.repositories.impl;
 
+import com.example.gsm.dao.ResponseCommon;
 import com.example.gsm.dao.StatisticsRequest;
 import com.example.gsm.dao.StatisticsSimpleResponse;
 import com.example.gsm.dao.TimeType;
@@ -16,6 +17,8 @@ import java.time.*;
 import java.time.format.TextStyle;
 import java.util.*;
 
+import static com.example.gsm.comon.Constants.SUCCESS_CODE;
+import static com.example.gsm.comon.Constants.SUCCESS_MESSAGE;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @Service
@@ -36,7 +39,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     // Entry
     // ======================================================================================
     @Override
-    public StatisticsSimpleResponse getStatistics(StatisticsRequest req) {
+    public ResponseCommon<StatisticsSimpleResponse> getStatistics(StatisticsRequest req) {
         Objects.requireNonNull(req.getTimeType(), "timeType is required");
         Objects.requireNonNull(req.getYear(), "year is required");
         if ((req.getTimeType() == TimeType.DAY || req.getTimeType() == TimeType.WEEK)
@@ -69,11 +72,13 @@ public class StatisticsServiceImpl implements StatisticsService {
         // 3) timeSeries: per-type series (DAY/WEEK/MONTH)
         List<StatisticsSimpleResponse.TypeSeries> timeSeries = aggregateTimeSeries(range);
 
-        return StatisticsSimpleResponse.builder()
+         StatisticsSimpleResponse statisticsSimpleResponse = StatisticsSimpleResponse.builder()
                 .overview(overview)
                 .byAppType(byAppType)
                 .timeSeries(timeSeries)
                 .build();
+
+        return new ResponseCommon<>(SUCCESS_CODE,SUCCESS_MESSAGE,statisticsSimpleResponse);
     }
 
     // ======================================================================================

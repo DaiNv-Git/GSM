@@ -1,9 +1,13 @@
 package com.example.gsm.repositories.impl;
 
+import com.example.gsm.comon.LogConfig;
 import com.example.gsm.dao.*;
 import com.example.gsm.repositories.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
@@ -13,13 +17,18 @@ import org.springframework.stereotype.Service;
 import java.time.*;
 import java.time.format.TextStyle;
 import java.util.*;
-import java.util.stream.Collectors;
 
+import static com.example.gsm.comon.Constants.*;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @Service
 @RequiredArgsConstructor
 public class DashboardServiceImpl implements DashboardService {
+
+    LogConfig logger = new LogConfig(DashboardServiceImpl.class);
+
+    @Autowired
+    private MessageSource messageSource;
 
     private final MongoTemplate mongo;
 
@@ -32,13 +41,11 @@ public class DashboardServiceImpl implements DashboardService {
     private static final List<String> ALL_TYPES = List.of(OTP, RENT, SMS, CALL, PROXY);
 
     @Override
-    public DashboardResponse getDashboard(DashboardRequest req) {
-        Objects.requireNonNull(req.getTimeType(), "timeType is required");
-        Objects.requireNonNull(req.getYear(), "year is required");
-        if ((req.getTimeType() == TimeType.DAY || req.getTimeType() == TimeType.WEEK)
-                && (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
-            throw new IllegalArgumentException("month is required for DAY/WEEK and must be 1..12");
-        }
+    public ResponseCommon<DashboardResponse> getDashboard(DashboardRequest req) {
+        logger.info(messageSource.getMessage("LOG.REQUEST_START",null,null) , new JSONObject(req));
+
+        String b_loi = validateDashboardRequest(req);
+        if (!b_loi.isEmpty()) {return new ResponseCommon<>(CORE_ERROR_CODE, b_loi, null);}
 
         PeriodRange cur  = resolveRange(req, false);
         PeriodRange prev = resolveRange(req, true);
@@ -74,10 +81,28 @@ public class DashboardServiceImpl implements DashboardService {
                     .build());
         }
 
-        return DashboardResponse.builder()
+        DashboardResponse dashboardResponse = DashboardResponse.builder()
                 .overview(overview)
                 .statusBoxes(statusBoxes)
                 .build();
+
+        logger.info(messageSource.getMessage("LOG.RESPONSE_START",null,null) , new JSONObject(dashboardResponse));
+
+        return new ResponseCommon<>(SUCCESS_CODE,SUCCESS_MESSAGE,dashboardResponse);
+    }
+
+    private String validateDashboardRequest(DashboardRequest req) {
+        if (req.getTimeType() == null) {
+            return "timeType is required";
+        }
+        if (req.getYear() == null) {
+            return "year is required";
+        }
+        if ((req.getTimeType() == TimeType.DAY || req.getTimeType() == TimeType.WEEK)
+                && (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
+            return "month is required for DAY/WEEK and must be 1..12";
+        }
+        return "";
     }
 
     private PeriodRange resolveRange(DashboardRequest req, boolean previous) {
@@ -145,13 +170,10 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public TypeTotalsResponse getTypeTotals(TypeTotalsRequest req) {
-        Objects.requireNonNull(req.getTimeType(), "timeType is required");
-        Objects.requireNonNull(req.getYear(), "year is required");
-        if ((req.getTimeType() == TimeType.DAY || req.getTimeType() == TimeType.WEEK)
-                && (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
-            throw new IllegalArgumentException("month is required for DAY/WEEK and must be 1..12");
-        }
+    public ResponseCommon<TypeTotalsResponse> getTypeTotals(TypeTotalsRequest req) {
+
+        String b_loi = validateTypeTotalsRequest(req);
+        if (!b_loi.isEmpty()) {return new ResponseCommon<>(CORE_ERROR_CODE, b_loi, null);}
 
         PeriodRange range = resolveRange(req);
 
@@ -232,10 +254,27 @@ public class DashboardServiceImpl implements DashboardService {
                     .build());
         }
 
-        return TypeTotalsResponse.builder()
+         TypeTotalsResponse typeTotalsResponse = TypeTotalsResponse.builder()
                 .labels(labels)
                 .seriesByType(seriesByType)
                 .build();
+
+        return new ResponseCommon<>(SUCCESS_CODE,SUCCESS_MESSAGE,typeTotalsResponse);
+
+    }
+
+    private String validateTypeTotalsRequest(TypeTotalsRequest req) {
+        if (req.getTimeType() == null) {
+            return "timeType is required";
+        }
+        if (req.getYear() == null) {
+            return "year is required";
+        }
+        if ((req.getTimeType() == TimeType.DAY || req.getTimeType() == TimeType.WEEK)
+                && (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
+            return "month is required for DAY/WEEK and must be 1..12";
+        }
+        return "";
     }
 
     private PeriodRange resolveRange(TypeTotalsRequest req) {

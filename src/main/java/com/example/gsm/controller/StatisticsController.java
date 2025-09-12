@@ -1,4 +1,5 @@
 package com.example.gsm.controller;
+import com.example.gsm.dao.ResponseCommon;
 import com.example.gsm.dao.StatisticsRequest;
 import com.example.gsm.dao.StatisticsSimpleResponse;
 import com.example.gsm.repositories.StatisticsService;
@@ -13,7 +14,7 @@ public class StatisticsController {
     private final StatisticsService statisticsService;
 
     @PostMapping
-    public StatisticsSimpleResponse getStatistics(@Valid @RequestBody StatisticsRequest req) {
+    public ResponseCommon<StatisticsSimpleResponse> getStatistics(@Valid @RequestBody StatisticsRequest req) {
         return statisticsService.getStatistics(req);
     }
 }
