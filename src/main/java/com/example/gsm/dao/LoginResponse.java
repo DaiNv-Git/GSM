@@ -16,4 +16,8 @@ public class LoginResponse {
     private String firstName;
     private String lastName;
     private List<String> roles;
+    private Boolean isDev;
+    private Boolean isAdmin;
+    private Boolean isPartner;
+    private Boolean isAgent;
 }

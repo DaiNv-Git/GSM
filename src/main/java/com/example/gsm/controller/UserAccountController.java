@@ -10,6 +10,7 @@ import com.example.gsm.services.AuthService;
 import com.example.gsm.services.impl.UserAccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -31,11 +32,17 @@ public class UserAccountController {
     }
     @GetMapping("/info")
     public ResponseEntity<UserMeResponse> me(Authentication auth) {
+        if (auth == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         String username = (String) auth.getPrincipal();
         UserAccount user = repo.findByWebInfoUsername(username)
                 .orElseThrow();
 
-        List<String> roles = user.isAdmin() ? List.of("ADMIN") : List.of("USER");
+        List<String> roles = Boolean.TRUE.equals(user.isAdmin())
+                ? List.of("ADMIN")
+                : List.of("USER");
 
         var res = UserMeResponse.builder()
                 .id(user.getId())
@@ -43,8 +50,12 @@ public class UserAccountController {
                 .balanceAmount(user.getBalanceAmount())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
-                .isActive(user.isActive())
+                .isActive(user.isActive())        
                 .roles(roles)
+                .isDev(user.isDev())              
+                .isAdmin(user.isAdmin())           
+                .isPartner(user.isPartner())       
+                .isAgent(user.isAgent())           
                 .build();
 
         return ResponseEntity.ok(res);

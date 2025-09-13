@@ -50,6 +50,10 @@ public class AuthServiceImpl implements AuthService {
                 .firstName(u.getFirstName())
                 .lastName(u.getLastName())
                 .roles(roles)
+                .isDev(u.isDev())
+                .isAdmin(u.isAdmin())
+                .isPartner(u.isPartner())
+                .isAgent(u.isAgent())
                 .build();
     }
 }
