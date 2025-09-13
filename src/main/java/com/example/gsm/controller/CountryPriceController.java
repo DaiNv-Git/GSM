@@ -1,5 +1,6 @@
 package com.example.gsm.controller;
 
+import com.example.gsm.dao.CountryPriceDTO;
 import com.example.gsm.entity.Country;
 import com.example.gsm.entity.ServiceCountryPrice;
 import com.example.gsm.exceptions.BadRequestException;
@@ -22,7 +23,7 @@ public class CountryPriceController {
         return ResponseEntity.ok(countryService.getAllCountries());
     }
     @GetMapping("/countries/{serviceCode}")
-    public ResponseEntity<List<Country>> getAllCountriesByServiceCode(@PathVariable String serviceCode) {
+    public ResponseEntity<List<CountryPriceDTO>> getAllCountriesByServiceCode(@PathVariable String serviceCode) {
         return ResponseEntity.ok(countryService.getAllCountriesByServiceCode(serviceCode));
     }
     
