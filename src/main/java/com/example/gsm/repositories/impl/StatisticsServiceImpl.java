@@ -1,9 +1,6 @@
 package com.example.gsm.repositories.impl;
 
-import com.example.gsm.dao.ResponseCommon;
-import com.example.gsm.dao.StatisticsRequest;
-import com.example.gsm.dao.StatisticsSimpleResponse;
-import com.example.gsm.dao.TimeType;
+import com.example.gsm.dao.*;
 import com.example.gsm.repositories.StatisticsService;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
@@ -17,8 +14,7 @@ import java.time.*;
 import java.time.format.TextStyle;
 import java.util.*;
 
-import static com.example.gsm.comon.Constants.SUCCESS_CODE;
-import static com.example.gsm.comon.Constants.SUCCESS_MESSAGE;
+import static com.example.gsm.comon.Constants.*;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @Service
@@ -28,10 +24,10 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final MongoTemplate mongo;
 
     // ===== Types =====
-    private static final String OTP   = "buy.otp.service";
-    private static final String RENT  = "rent.otp.service";
-    private static final String SMS   = "buy.sms.service";
-    private static final String CALL  = "buy.call.service";
+    private static final String OTP = "buy.otp.service";
+    private static final String RENT = "rent.otp.service";
+    private static final String SMS = "buy.sms.service";
+    private static final String CALL = "buy.call.service";
     private static final String PROXY = "buy.proxy.service";
     private static final List<String> ALL_TYPES = List.of(OTP, RENT, SMS, CALL, PROXY);
 
@@ -40,11 +36,10 @@ public class StatisticsServiceImpl implements StatisticsService {
     // ======================================================================================
     @Override
     public ResponseCommon<StatisticsSimpleResponse> getStatistics(StatisticsRequest req) {
-        Objects.requireNonNull(req.getTimeType(), "timeType is required");
-        Objects.requireNonNull(req.getYear(), "year is required");
-        if ((req.getTimeType() == TimeType.DAY || req.getTimeType() == TimeType.WEEK)
-                && (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
-            throw new IllegalArgumentException("month is required for DAY/WEEK and must be 1..12");
+
+        String error = validateGetStatistics(req);
+        if (!error.isEmpty()) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, error, null);
         }
 
         PeriodRange range = resolveRange(req);
@@ -52,8 +47,8 @@ public class StatisticsServiceImpl implements StatisticsService {
         // 1) Overview (per-type + totals + revenue)
         List<StatisticsSimpleResponse.TypeTotal> perType = aggregatePerType(range);
         long successTotal = perType.stream().mapToLong(StatisticsSimpleResponse.TypeTotal::getSuccess).sum();
-        long refundTotal  = perType.stream().mapToLong(StatisticsSimpleResponse.TypeTotal::getRefund).sum();
-        long totalAll     = perType.stream().mapToLong(StatisticsSimpleResponse.TypeTotal::getTotal).sum();
+        long refundTotal = perType.stream().mapToLong(StatisticsSimpleResponse.TypeTotal::getRefund).sum();
+        long totalAll = perType.stream().mapToLong(StatisticsSimpleResponse.TypeTotal::getTotal).sum();
         double revenueTot = perType.stream().mapToDouble(StatisticsSimpleResponse.TypeTotal::getRevenue).sum();
         long countryCount = distinctCountry(range);
 
@@ -72,13 +67,27 @@ public class StatisticsServiceImpl implements StatisticsService {
         // 3) timeSeries: per-type series (DAY/WEEK/MONTH)
         List<StatisticsSimpleResponse.TypeSeries> timeSeries = aggregateTimeSeries(range);
 
-         StatisticsSimpleResponse statisticsSimpleResponse = StatisticsSimpleResponse.builder()
+        StatisticsSimpleResponse statisticsSimpleResponse = StatisticsSimpleResponse.builder()
                 .overview(overview)
                 .byAppType(byAppType)
                 .timeSeries(timeSeries)
                 .build();
 
-        return new ResponseCommon<>(SUCCESS_CODE,SUCCESS_MESSAGE,statisticsSimpleResponse);
+        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, statisticsSimpleResponse);
+    }
+
+    private String validateGetStatistics(StatisticsRequest req) {
+        if (req.getTimeType() == null) {
+            return "timeType is required";
+        }
+        if (req.getYear() == null) {
+            return "year is required";
+        }
+        if ((req.getTimeType() == TimeType.DAY || req.getTimeType() == TimeType.WEEK)
+                && (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
+            return "month is required for DAY/WEEK and must be 1..12";
+        }
+        return "";
     }
 
     // ======================================================================================
@@ -103,7 +112,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                                 .then(1).otherwise(0)).as("refund")
                         .count().as("total")
                         .sum("cost").as("revenue"),
-                project("success","refund","total","revenue").and("_id").as("type"),
+                project("success", "refund", "total", "revenue").and("_id").as("type"),
                 sort(Sort.Direction.ASC, "type")
         );
 
@@ -141,17 +150,17 @@ public class StatisticsServiceImpl implements StatisticsService {
 
         Aggregation agg = newAggregation(
                 match(c),
-                project("platform","type","statusCode"),
-                group("type","platform")
+                project("platform", "type", "statusCode"),
+                group("type", "platform")
                         .sum(ConditionalOperators.when(Criteria.where("statusCode").is("SUCCESS"))
                                 .then(1).otherwise(0)).as("success")
                         .sum(ConditionalOperators.when(Criteria.where("statusCode").is("REFUNDED"))
                                 .then(1).otherwise(0)).as("refund")
                         .count().as("total"),
-                project("success","refund","total")
+                project("success", "refund", "total")
                         .and("_id.type").as("type")
                         .and("_id.platform").as("app"),
-                sort(Sort.Direction.ASC,"type","app")
+                sort(Sort.Direction.ASC, "type", "app")
         );
 
         List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
@@ -192,8 +201,8 @@ public class StatisticsServiceImpl implements StatisticsService {
     /**
      * timeSeries theo từng type:
      * - bucket: DAY → dayOfMonth(createdAt)
-     *           WEEK → floor((dayOfMonth(createdAt)-1)/7) in [0..3]
-     *           MONTH→ month(createdAt) in [1..12]
+     * WEEK → floor((dayOfMonth(createdAt)-1)/7) in [0..3]
+     * MONTH→ month(createdAt) in [1..12]
      * - group theo (type, bucket)
      */
     private List<StatisticsSimpleResponse.TypeSeries> aggregateTimeSeries(PeriodRange range) {
@@ -201,21 +210,21 @@ public class StatisticsServiceImpl implements StatisticsService {
 
         Aggregation agg = newAggregation(
                 match(c),
-                project("type","statusCode","createdAt")
+                project("type", "statusCode", "createdAt")
                         .andExpression(bucketExpr(range)).as("bucket"),
-                group("type","bucket")
+                group("type", "bucket")
                         .sum(ConditionalOperators.when(Criteria.where("statusCode").is("SUCCESS"))
                                 .then(1).otherwise(0)).as("success")
                         .sum(ConditionalOperators.when(Criteria.where("statusCode").is("REFUNDED"))
                                 .then(1).otherwise(0)).as("refund")
                         .count().as("total"),
-                project("success","refund","total")
+                project("success", "refund", "total")
                         .and("_id.type").as("type")
                         .and("_id.bucket").as("bucket"),
-                sort(Sort.Direction.ASC,"type","bucket")
+                sort(Sort.Direction.ASC, "type", "bucket")
         );
 
-        List<Document> rows = mongo.aggregate(agg,"orders",Document.class).getMappedResults();
+        List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
 
         // Map: type -> (bucket -> doc)
         Map<String, Map<Integer, Document>> map = new HashMap<>();
@@ -278,14 +287,14 @@ public class StatisticsServiceImpl implements StatisticsService {
     // Helpers
     // ======================================================================================
     private String bucketExpr(PeriodRange range) {
-        if (range.timeType == TimeType.DAY)  return "dayOfMonth(createdAt)";
+        if (range.timeType == TimeType.DAY) return "dayOfMonth(createdAt)";
         if (range.timeType == TimeType.WEEK) return "floor((dayOfMonth(createdAt)-1)/7)";
         return "month(createdAt)";
     }
 
     private PeriodRange resolveRange(StatisticsRequest req) {
         TimeType t = req.getTimeType();
-        int year   = req.getYear();
+        int year = req.getYear();
         if (t == TimeType.MONTH) {
             LocalDate s = LocalDate.of(year, 1, 1);
             return new PeriodRange(s.atStartOfDay(), s.plusYears(1).atStartOfDay(), t);
@@ -307,6 +316,11 @@ public class StatisticsServiceImpl implements StatisticsService {
     private static class PeriodRange {
         final LocalDateTime start, end;
         final TimeType timeType;
-        PeriodRange(LocalDateTime s, LocalDateTime e, TimeType t) { this.start = s; this.end = e; this.timeType = t; }
+
+        PeriodRange(LocalDateTime s, LocalDateTime e, TimeType t) {
+            this.start = s;
+            this.end = e;
+            this.timeType = t;
+        }
     }
 }
