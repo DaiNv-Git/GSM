@@ -2,6 +2,7 @@ package com.example.gsm.exceptions;
 
 public enum ErrorCode {
     USER_NOT_FOUND("USER_001", "User not found"),
+    PRICE_NOT_FOUND("PRICE_NOT_FOUND", "admin has not configured prices for this country"),
     INVALID_INPUT("COMMON_001", "Invalid input"),
     PERMISSION_DENIED("AUTH_001", "Permission denied"),
     BAD_EXCEPTION("BAD_EXCEPTION", " BAD_EXCEPTION"),
