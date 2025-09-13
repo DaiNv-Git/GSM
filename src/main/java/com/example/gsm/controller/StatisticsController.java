@@ -1,7 +1,7 @@
 package com.example.gsm.controller;
 import com.example.gsm.dao.StatisticsRequest;
 import com.example.gsm.dao.StatisticsSimpleResponse;
-import com.example.gsm.repositories.StatisticsService;
+import com.example.gsm.services.StatisticsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

@@ -1,7 +1,7 @@
 package com.example.gsm.controller;
 
 import com.example.gsm.entity.ApplicationConfig;
-import com.example.gsm.repositories.ApplicationConfigService;
+import com.example.gsm.services.ApplicationConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

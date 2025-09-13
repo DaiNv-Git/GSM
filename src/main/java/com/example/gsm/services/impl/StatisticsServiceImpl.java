@@ -1,9 +1,9 @@
-package com.example.gsm.repositories.impl;
+package com.example.gsm.services.impl;
 
 import com.example.gsm.dao.StatisticsRequest;
 import com.example.gsm.dao.StatisticsSimpleResponse;
 import com.example.gsm.dao.TimeType;
-import com.example.gsm.repositories.StatisticsService;
+import com.example.gsm.services.StatisticsService;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
 import org.springframework.data.domain.Sort;

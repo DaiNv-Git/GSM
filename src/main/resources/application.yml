@@ -9,7 +9,7 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %level - %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} - %level - %logger{36} - %msg%n"
 server:
-  port: 8081
+  port: 9090
 spring:
   data:
     mongodb:
@@ -22,3 +22,8 @@ springdoc:
     path: /docs
     operationsSorter: method
     tagsSorter: alpha
+app:
+  jwt:
+    secret: "FxeXkZGX29XbExKcC8+b0KxeZDzF6Q5DWzIqenGvA5k="
+    access-exp-ms: 600000         # 10 phút
+    refresh-exp-ms: 604800000     # 7 ngày

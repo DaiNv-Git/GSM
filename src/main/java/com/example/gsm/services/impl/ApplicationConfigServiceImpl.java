@@ -1,11 +1,11 @@
-package com.example.gsm.repositories.impl;
+package com.example.gsm.services.impl;
 
 import com.example.gsm.entity.ApplicationConfig;
 
 import com.example.gsm.entity.repository.ApplicationConfigRepository;
 import com.example.gsm.exceptions.BadRequestException;
 import com.example.gsm.exceptions.ErrorCode;
-import com.example.gsm.repositories.ApplicationConfigService;
+import com.example.gsm.services.ApplicationConfigService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;

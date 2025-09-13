@@ -4,7 +4,8 @@ public enum ErrorCode {
     USER_NOT_FOUND("USER_001", "User not found"),
     INVALID_INPUT("COMMON_001", "Invalid input"),
     PERMISSION_DENIED("AUTH_001", "Permission denied"),
-    BAD_EXCEPTION("BAD_EXCEPTION", " BAD_EXCEPTION");
+    BAD_EXCEPTION("BAD_EXCEPTION", " BAD_EXCEPTION"),
+    USER_EXISTED("USER_EXISTED", " USER EXISTED");
 
     private final String code;
     private final String message;

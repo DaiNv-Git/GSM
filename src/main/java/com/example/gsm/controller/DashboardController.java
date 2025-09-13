@@ -4,7 +4,7 @@ import com.example.gsm.dao.DashboardRequest;
 import com.example.gsm.dao.DashboardResponse;
 import com.example.gsm.dao.TypeTotalsRequest;
 import com.example.gsm.dao.TypeTotalsResponse;
-import com.example.gsm.repositories.DashboardService;
+import com.example.gsm.services.DashboardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;

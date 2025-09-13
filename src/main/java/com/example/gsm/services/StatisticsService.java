@@ -1,4 +1,4 @@
-package com.example.gsm.repositories;
+package com.example.gsm.services;
 
 import com.example.gsm.dao.StatisticsRequest;
 import com.example.gsm.dao.StatisticsSimpleResponse;

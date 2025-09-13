@@ -1,4 +1,4 @@
-package com.example.gsm.repositories;
+package com.example.gsm.services;
 import com.example.gsm.entity.ApplicationConfig;
 import java.util.List;
 
