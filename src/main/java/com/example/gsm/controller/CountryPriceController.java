@@ -23,10 +23,13 @@ public class CountryPriceController {
         return ResponseEntity.ok(countryService.getAllCountries());
     }
     @GetMapping("/countries/{serviceCode}")
-    public ResponseEntity<List<CountryPriceDTO>> getAllCountriesByServiceCode(@PathVariable String serviceCode) {
-        return ResponseEntity.ok(countryService.getAllCountriesByServiceCode(serviceCode));
+    public ResponseEntity<List<CountryPriceDTO>> getAllCountriesByServiceCode(
+            @PathVariable String serviceCode,
+            @RequestParam(required = false) String name) {
+        return ResponseEntity.ok(countryService.getAllCountriesByServiceCode(serviceCode, name));
     }
-    
+
+
     @GetMapping("/service-price")
     public ResponseEntity<?> getServicePrice(
             @RequestParam String serviceCode,

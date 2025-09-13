@@ -23,7 +23,7 @@ public class CountryServiceImpl implements CountryService {
         return countryRepository.findAll();
     }
 
-    public List<CountryPriceDTO> getAllCountriesByServiceCode(String serviceCode) {
+    public List<CountryPriceDTO> getAllCountriesByServiceCode(String serviceCode, String name) {
         // Lấy tất cả các bản ghi giá theo serviceCode
         List<ServiceCountryPrice> prices = priceRepository.findByServiceCode(serviceCode);
 
@@ -33,9 +33,14 @@ public class CountryServiceImpl implements CountryService {
                 .distinct()
                 .toList();
 
-        // Lấy thông tin Country theo countryCode
-        List<Country> countries = countryRepository.findAllByCountryCodeIn(countryCodes);
+        List<Country> countries;
+        if (name != null && !name.isEmpty()) {
+            countries = countryRepository.findAllByCountryCodeInAndCountryNameContainingIgnoreCase(countryCodes, name);
+        } else {
+            countries = countryRepository.findAllByCountryCodeIn(countryCodes);
+        }
 
+        // Map sang DTO
         List<CountryPriceDTO> result = prices.stream().map(price -> {
             Country country = countries.stream()
                     .filter(c -> c.getCountryCode().equals(price.getCountryCode()))
@@ -56,6 +61,7 @@ public class CountryServiceImpl implements CountryService {
 
         return result;
     }
+
 
 
     public Optional<ServiceCountryPrice> getPriceByServiceAndCountry(String serviceCode, String countryCode) {

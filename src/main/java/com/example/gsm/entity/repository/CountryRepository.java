@@ -7,5 +7,7 @@ import java.util.List;
 
 public interface CountryRepository extends MongoRepository<Country, String> {
     List<Country> findAllByCountryCodeIn(List<String> countryCodes);
+    List<Country> findAllByCountryCodeInAndCountryNameContainingIgnoreCase(List<String> countryCodes, String countryName);
+
 
 }
