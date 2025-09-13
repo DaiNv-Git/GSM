@@ -68,7 +68,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         List<StatisticsSimpleResponse.TypeSeries> timeSeries = aggregateTimeSeries(range);
 
         StatisticsSimpleResponse statisticsSimpleResponse = StatisticsSimpleResponse.builder()
-                .overview(overview)
+                .overviewStatistics(overview)
                 .byAppType(byAppType)
                 .timeSeries(timeSeries)
                 .build();

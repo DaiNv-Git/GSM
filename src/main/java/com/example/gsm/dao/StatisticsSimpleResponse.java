@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 @Builder
 public class StatisticsSimpleResponse {
-    private Overview overview;                       // ✅ có revenue tổng & revenue theo type
+    private Overview overviewStatistics;                       // ✅ có revenue tổng & revenue theo type
     private List<TypeGroup> byAppType;
     private List<TypeSeries> timeSeries;
 

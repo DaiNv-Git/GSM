@@ -54,9 +54,7 @@ public class OTPServiceImpl implements OTPService {
         // Build response
         OtpResponse response = new OtpResponse(revenueMetrics, barChartData, lineChartData);
         return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, response);
-
     }
-
 
     private String validateRequest(OtpRequest req) {
         if (req.getTimeType() == null) {
@@ -120,7 +118,7 @@ public class OTPServiceImpl implements OTPService {
                         .as("orderCountRefund"),
                 project("orderCountSuccess", "orderCountRefund")
                         .and("_id").as("serviceName"),
-                sort(Sort.Direction.DESC, "orderCountSuccess") // có thể đổi thành total nếu muốn
+                sort(Sort.Direction.DESC, "orderCountSuccess")
         );
 
         List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
@@ -138,7 +136,6 @@ public class OTPServiceImpl implements OTPService {
 
     @Override
     public ResponseCommon<OtpDetailsPagedResponse> getOtpDetails(OtpDetailsRequest req) {
-
         PeriodRange range = resolveRange(req.getTimeType(), req.getYear(), req.getMonth());
 
         Criteria c = Criteria.where("createdAt")
@@ -146,10 +143,10 @@ public class OTPServiceImpl implements OTPService {
                 .lt(toDate(range.end))
                 .and("type").is(OTP_TYPE);
 
-        // Doanh thu tổng
+        // Total revenue metrics
         OtpResponse.RevenueMetrics revenueMetrics = aggregateRevenueMetrics(range);
 
-        // build pipeline tính toán
+        // Build aggregation pipeline
         ProjectionOperation projService = project("cost", "discountRate", "statusCode", "isRefund", "isActive")
                 .and("stock.serviceCode").as("serviceName");
 
@@ -197,23 +194,23 @@ public class OTPServiceImpl implements OTPService {
             ));
         }
 
-        // total records
+        // Total records
         int total = items.size();
 
-        // paging thủ công
+        // Manual paging
         int pageSize = req.getPageSize() == null ? total : req.getPageSize();
         int pageNumber = req.getPageNumber() == null ? 1 : req.getPageNumber();
 
-        // đảm bảo không out of range
+        // Ensure no out of range
         int fromIndex = Math.max(0, (pageNumber - 1) * pageSize);
         if (fromIndex >= total) {
-            fromIndex = 0; // nếu pageNumber quá lớn thì reset về trang đầu
+            fromIndex = 0; // Reset to first page if pageNumber is too large
         }
         int toIndex = Math.min(fromIndex + pageSize, total);
 
         List<OtpDetailsResponse> pagedItems = items.subList(fromIndex, toIndex);
 
-        // đóng gói response
+        // Package response
         PagedResponse<OtpDetailsResponse> data = new PagedResponse<>(
                 total,
                 pageNumber,
@@ -223,19 +220,19 @@ public class OTPServiceImpl implements OTPService {
 
         return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE,
                 new OtpDetailsPagedResponse(revenueMetrics, data));
-
     }
+
     @Override
     public ResponseCommon<List<Document>> findServicesByAppName(String name) {
-        // Kiểm tra đầu vào
+        // Validate input
         if (name == null || name.trim().isEmpty()) {
             return new ResponseCommon<>(CORE_ERROR_CODE, "Tên ứng dụng không được rỗng", Collections.emptyList());
         }
 
-        // Chuyển giá trị name thành chữ hoa và thoát các ký tự đặc biệt
+        // Escape special characters and convert to uppercase
         String searchValue = Pattern.quote(name.trim().toUpperCase());
 
-        // Tạo Aggregation với điều kiện tìm kiếm cho cả `text` và `code`
+        // Create aggregation with search conditions for both 'text' and 'code'
         Aggregation agg = Aggregation.newAggregation(
                 Aggregation.match(
                         new Criteria().orOperator(
@@ -245,17 +242,17 @@ public class OTPServiceImpl implements OTPService {
                 )
         );
 
-        // Thực hiện truy vấn và lấy kết quả
+        // Execute query and get results
         List<Document> results = mongo.aggregate(agg, "services", Document.class).getMappedResults();
 
-
-        // Kiểm tra kết quả
+        // Check results
         if (results.isEmpty()) {
             return new ResponseCommon<>(SUCCESS_CODE, "Không tìm thấy dịch vụ phù hợp", Collections.emptyList());
         }
 
         return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, results);
     }
+
     private List<OtpResponse.TimeSeriesItem> aggregateLineChart(PeriodRange range, TimeType timeType) {
         Criteria c = Criteria.where("createdAt")
                 .gte(toDate(range.start))
@@ -264,20 +261,28 @@ public class OTPServiceImpl implements OTPService {
 
         Aggregation agg = newAggregation(
                 match(c),
-                project("cost", "createdAt")
+                project("createdAt", "statusCode")
                         .andExpression(bucketExpr(range)).as("bucket"),
-                group("bucket")
-                        .sum("cost").as("totalRevenue"),
-                project("totalRevenue").and("_id").as("timeLabel"),
+                group("bucket", "statusCode").count().as("count"),
+                project("count").and("_id.bucket").as("timeLabel").and("_id.statusCode").as("statusCode"),
                 sort(Sort.Direction.ASC, "timeLabel")
         );
 
         List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
-        Map<Integer, Document> bucketMap = rows.stream().collect(Collectors.toMap(
-                d -> ((Number) d.get("timeLabel")).intValue(),
-                d -> d,
-                (d1, d2) -> d1,
-                HashMap::new
+        Map<Integer, Map<String, Long>> bucketStatusMap = rows.stream().collect(Collectors.groupingBy(
+                d -> {
+                    Object label = d.get("timeLabel");
+                    return label instanceof Number ? ((Number) label).intValue() : 0;
+                },
+                Collectors.toMap(
+                        d -> d.getString("statusCode"),
+                        d -> {
+                            Object count = d.get("count");
+                            return count instanceof Number ? ((Number) count).longValue() : 0L;
+                        },
+                        (v1, v2) -> v1,
+                        HashMap::new
+                )
         ));
 
         List<OtpResponse.TimeSeriesItem> lineChartData = new ArrayList<>();
@@ -287,28 +292,31 @@ public class OTPServiceImpl implements OTPService {
                     .collect(Collectors.toList());
             for (LocalDate date : dates) {
                 String label = date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-                Document doc = bucketMap.getOrDefault(date.getDayOfMonth(), new Document("totalRevenue", 0));
-                lineChartData.add(new OtpResponse.TimeSeriesItem(
-                        label,
-                        round2(((Number) doc.get("totalRevenue")).doubleValue())
-                ));
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(date.getDayOfMonth(), new HashMap<>());
+                long success = statusCounts.getOrDefault("SUCCESS", 0L);
+                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
+                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
+                lineChartData.add(new OtpResponse.TimeSeriesItem(label, success, refund, total));
             }
         } else if (timeType == TimeType.WEEK) {
             int weeks = (int) Math.ceil(range.end.toLocalDate().lengthOfMonth() / 7.0);
             for (int w = 0; w < weeks; w++) {
-                Document doc = bucketMap.getOrDefault(w, new Document("totalRevenue", 0));
-                lineChartData.add(new OtpResponse.TimeSeriesItem(
-                        "W" + (w + 1),
-                        round2(((Number) doc.get("totalRevenue")).doubleValue())
-                ));
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(w, new HashMap<>());
+                long success = statusCounts.getOrDefault("SUCCESS", 0L);
+                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
+                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
+                lineChartData.add(new OtpResponse.TimeSeriesItem("W" + (w + 1), success, refund, total));
             }
         } else { // MONTH
             for (int m = 1; m <= 12; m++) {
-                Document doc = bucketMap.getOrDefault(m, new Document("totalRevenue", 0));
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(m, new HashMap<>());
+                long success = statusCounts.getOrDefault("SUCCESS", 0L);
+                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
+                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
                 lineChartData.add(new OtpResponse.TimeSeriesItem(
                         LocalDate.of(range.start.getYear(), m, 1)
                                 .getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH),
-                        round2(((Number) doc.get("totalRevenue")).doubleValue())
+                        success, refund, total
                 ));
             }
         }
@@ -326,7 +334,7 @@ public class OTPServiceImpl implements OTPService {
 
         List<Criteria> criteriaList = new ArrayList<>();
 
-        // Code và text filter (regex, không phân biệt hoa/thường)
+        // Code and text filter (regex, case-insensitive)
         if (code != null && !code.trim().isBlank()) {
             String escapedCode = Pattern.quote(code.trim().toUpperCase());
             criteriaList.add(new Criteria().orOperator(
@@ -397,7 +405,7 @@ public class OTPServiceImpl implements OTPService {
             criteriaList.add(Criteria.where("createdAt").gte(fromDate));
         }
 
-        // Kết hợp tất cả điều kiện
+        // Combine all conditions
         Criteria finalCriteria = criteriaList.isEmpty() ? new Criteria() : new Criteria().andOperator(criteriaList);
 
         // Aggregation pipeline
@@ -406,19 +414,16 @@ public class OTPServiceImpl implements OTPService {
                 Aggregation.sort(Sort.by(Sort.Direction.DESC, "createdAt"))
         );
 
-        // Thực thi truy vấn
+        // Execute query
         List<ServiceEntity> results = mongo.aggregate(agg, "services", ServiceEntity.class).getMappedResults();
 
-        // Trả về kết quả
+        // Return result
         return new ResponseCommon<>(
                 SUCCESS_CODE,
                 results.isEmpty() ? "Không tìm thấy dịch vụ phù hợp" : SUCCESS_MESSAGE,
                 results
         );
     }
-
-
-
 
     private String bucketExpr(PeriodRange range) {
         if (range.timeType == TimeType.DAY) return "dayOfMonth(createdAt)";
@@ -446,7 +451,6 @@ public class OTPServiceImpl implements OTPService {
     }
 
     private PeriodRange resolveRange(TimeType timeType, int year, int month) {
-
         if (timeType == TimeType.MONTH) {
             LocalDate s = LocalDate.of(year, 1, 1);
             return new PeriodRange(s.atStartOfDay(), s.plusYears(1).atStartOfDay(), timeType);
@@ -455,5 +459,4 @@ public class OTPServiceImpl implements OTPService {
             return new PeriodRange(anchor.atStartOfDay(), anchor.plusMonths(1).atStartOfDay(), timeType);
         }
     }
-
 }

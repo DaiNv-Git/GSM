@@ -1,6 +1,5 @@
 package com.example.gsm.dao;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,12 +7,13 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class OtpResponse {
+@AllArgsConstructor
+public class RentResponse {
     private RevenueMetrics revenueMetrics;
-    private List<PlatformBreakdown> barChart;
-    private List<TimeSeriesItem> lineChart;
+    private List<String> usernames;
+    private List<ChartData> successRefundChart;
+    private List<RevenueData> revenueChart;
 
     @Data
     @AllArgsConstructor
@@ -27,20 +27,17 @@ public class OtpResponse {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public static class PlatformBreakdown {
-        private String platformName;
-        private long orderCountSuccess;
-        private long orderCountRefund;
+    public static class ChartData {
+        private String serviceCode;
+        private double successCount;
+        private double refundCount;
+        private double revenue;
     }
-
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public static class TimeSeriesItem {
+    public static class RevenueData {
         private String label;
-        private long success;
-        private long refund;
-        private long total;
+        private double totalRevenue;
     }
 }
-
