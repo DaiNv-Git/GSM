@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface CountryService {
     List<Country> getAllCountries();
+    List<Country> getAllCountriesByServiceCode(String serviceCode);
     Optional<ServiceCountryPrice> getPriceByServiceAndCountry(String serviceCode, String countryCode);
 }

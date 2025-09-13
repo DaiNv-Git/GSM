@@ -6,13 +6,9 @@ import com.example.gsm.exceptions.BadRequestException;
 import com.example.gsm.exceptions.ErrorCode;
 import com.example.gsm.services.CountryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -25,7 +21,11 @@ public class CountryPriceController {
     public ResponseEntity<List<Country>> getCountries() {
         return ResponseEntity.ok(countryService.getAllCountries());
     }
-
+    @GetMapping("/countries/{serviceCode}")
+    public ResponseEntity<List<Country>> getAllCountriesByServiceCode(@PathVariable String serviceCode) {
+        return ResponseEntity.ok(countryService.getAllCountriesByServiceCode(serviceCode));
+    }
+    
     @GetMapping("/service-price")
     public ResponseEntity<?> getServicePrice(
             @RequestParam String serviceCode,

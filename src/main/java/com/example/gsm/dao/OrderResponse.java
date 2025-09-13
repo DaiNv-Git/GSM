@@ -1,35 +1,27 @@
-package com.example.gsm.entity;
+package com.example.gsm.dao;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 import java.util.List;
 
 @Data
-@Document(collection = "orders")
-public class Order {
-
-    @Id
+public class OrderResponse {
     private String id;
-
     private String type;
     private Double cost;
-    private List<Stock> stock;
     private Long accountId;
+    private String countryCode;
+    private String statusCode;
+    private String platform;
     private Boolean isRefund;
     private Boolean isActive;
     private Date createdAt;
     private Date updatedAt;
-    private Integer discountRate;
-    private String countryCode;
-    private String statusCode;
-    private String platform;
-    private Integer __v;
+    private List<StockResponse> stock;
 
     @Data
-    public static class Stock {
+    public static class StockResponse {
         private String phone;
         private String provider;
         private String serviceCode;
