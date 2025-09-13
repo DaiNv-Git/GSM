@@ -20,7 +20,7 @@ public class UserAccountService {
 
     private final UserAccountRepository repository;
     private final PasswordEncoder passwordEncoder;
-    
+
 
     public UserAccount register(RegisterUserRequest req) {
         if (repository.existsByWebInfoUsername(req.getUsername())) {

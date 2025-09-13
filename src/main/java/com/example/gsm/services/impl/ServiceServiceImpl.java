@@ -13,7 +13,7 @@ import java.util.List;
 public class ServiceServiceImpl implements ServiceService {
     private final ServiceRepository serviceRepository;
 
-   
+
     public List<ServiceEntity> getAllServices() {
         return serviceRepository.findAll();
     }

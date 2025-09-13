@@ -18,7 +18,7 @@ public class ServiceController {
     public List<ServiceEntity> getAll() {
         return serviceService.getAllServices();
     }
-    
+
     @GetMapping("/search")
     public List<ServiceEntity> search(@RequestParam String name) {
         return serviceService.searchByName(name);

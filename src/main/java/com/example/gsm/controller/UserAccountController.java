@@ -1,9 +1,6 @@
 package com.example.gsm.controller;
 
-import com.example.gsm.dao.LoginRequest;
-import com.example.gsm.dao.LoginResponse;
-import com.example.gsm.dao.RegisterUserRequest;
-import com.example.gsm.dao.UserMeResponse;
+import com.example.gsm.dao.*;
 import com.example.gsm.entity.UserAccount;
 import com.example.gsm.entity.repository.UserAccountRepository;
 import com.example.gsm.services.AuthService;
@@ -65,4 +62,9 @@ public class UserAccountController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authService.refresh(request));
+    }
+
 }

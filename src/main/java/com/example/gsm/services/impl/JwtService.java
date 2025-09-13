@@ -1,5 +1,6 @@
 package com.example.gsm.services.impl;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @Service
 public class JwtService {
+
 
     @Value("${app.jwt.secret}")
     private String secretBase64;
