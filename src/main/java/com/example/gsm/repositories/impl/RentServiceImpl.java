@@ -9,6 +9,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -37,7 +39,83 @@ public class RentServiceImpl implements RentService {
     private final MongoTemplate mongo;
 
     private static final String RENT_TYPE = "rent.otp.service";
+    private static final List<String> LABELS = Arrays.asList(
+            "1 day", "3 days", "1 week", "3 weeks", "1 month", "3 months"
+    );
 
+    @Override
+    public ResponseCommon<List<RentServicesResponse>> getRentPrices(RentRequest req) {
+
+        // Validate request
+        String error = validateRequest(req);
+        if (!error.isEmpty()) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, error, null);
+        }
+
+        PeriodRange range = resolveRange(req);
+        Criteria c = buildCriteriaRentServices(range, req);
+
+        Aggregation agg = newAggregation(
+                match(c),
+                project("code", "text", "image", "rentDurationPrices","_id")
+        );
+
+        List<Document> services = mongo.aggregate(agg, "services", Document.class).getMappedResults();
+
+        List<RentServicesResponse> out = new ArrayList<>();
+        for (Document s : services) {
+            Map<String, Integer> prices = new LinkedHashMap<>();
+            for (String label : LABELS) {
+                prices.put(label, 0);
+            }
+
+            List<Document> rentPrices = (List<Document>) s.get("rentDurationPrices");
+            if (rentPrices != null) {
+                for (Document rp : rentPrices) {
+                    String label = rp.getString("label");
+                    Integer price = rp.getInteger("price");
+                    if (prices.containsKey(label)) {
+                        prices.put(label, price);
+                    }
+                }
+            }
+
+            out.add(new RentServicesResponse(
+                    s.getString("_id"),
+                    s.getString("code"),
+                    s.getString("text"),
+                    s.getString("image"),
+                    prices
+            ));
+        }
+
+        return new ResponseCommon<>(SUCCESS_CODE, "Success", out);
+    }
+
+    public void updateRentPrices(String serviceId, Map<String, Integer> newPrices) {
+        List<Document> rentDurationPrices = new ArrayList<>();
+        for (Map.Entry<String, Integer> e : newPrices.entrySet()) {
+            Document d = new Document();
+            d.put("label", e.getKey());
+            d.put("price", e.getValue());
+            d.put("days", convertLabelToDays(e.getKey()));
+            rentDurationPrices.add(d);
+        }
+
+        Update update = new Update().set("rentDurationPrices", rentDurationPrices);
+        mongo.updateFirst(Query.query(Criteria.where("_id").is(serviceId)), update, "services");
+    }
+    private int convertLabelToDays(String label) {
+        switch (label) {
+            case "1 day": return 1;
+            case "3 days": return 3;
+            case "1 week": return 7;
+            case "3 weeks": return 21;
+            case "1 month": return 30;
+            case "3 months": return 90;
+            default: return 0;
+        }
+    }
     @Override
     public ResponseCommon<RentResponse> getRent(RentRequest req) {
         // Validate request
@@ -66,7 +144,28 @@ public class RentServiceImpl implements RentService {
         RentResponse response = new RentResponse(revenueMetrics, rentInfos, successRefundChart, lineChartData);
         return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, response);
     }
+    private Criteria buildCriteriaRentServices(PeriodRange range, RentRequest req) {
+        Criteria c = Criteria.where("createdAt")
+                .gte(toDate(range.start))
+                .lt(toDate(range.end));
 
+        if (req.getAccountID() != null && !req.getAccountID().isEmpty()) {
+            try {
+                // accountId trong DB là Number => parse sang long
+                long accId = Long.parseLong(req.getAccountID());
+                c = c.and("accountId").is(accId);
+            } catch (NumberFormatException e) {
+                // fallback: so sánh string (trường hợp dữ liệu lẫn string)
+                c = c.and("accountId").is(req.getAccountID());
+            }
+        }
+        if (req.getCountryCode() != null && !req.getCountryCode().isEmpty()) {
+            // support cả string lẫn array
+            c = c.and("countryCode").in(req.getCountryCode());
+        }
+
+        return c;
+    }
     private Criteria buildCriteria(PeriodRange range, RentRequest req) {
         Criteria c = Criteria.where("createdAt")
                 .gte(toDate(range.start))
