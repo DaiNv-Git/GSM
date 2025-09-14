@@ -65,8 +65,7 @@ public class SimRentalService {
 
         userAccountRepository.save(user);
 
-
-        // tạo Order
+        
         Order order = new Order();
         order.setAccountId(accountId);
         order.setType(type);
@@ -121,7 +120,6 @@ public class SimRentalService {
 
         Date now = new Date();
 
-        // lọc: chỉ lấy order còn hạn (ít nhất 1 stock expiredAt > now)
         List<Order> filteredOrders = orderPage.getContent().stream()
                 .filter(order -> order.getStock() != null && order.getStock().stream()
                         .anyMatch(s -> s.getExpiredAt() != null && s.getExpiredAt().after(now)))
@@ -145,7 +143,6 @@ public class SimRentalService {
             if (o1Expired && !o2Expired) return -1;
             if (!o1Expired && o2Expired) return 1;
 
-            // Nếu cùng trạng thái expired thì sort theo createdAt desc
             return o2.getCreatedAt().compareTo(o1.getCreatedAt());
         };
 
