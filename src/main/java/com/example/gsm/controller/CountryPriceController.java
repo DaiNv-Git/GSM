@@ -34,7 +34,6 @@ public class CountryPriceController {
     public ResponseEntity<?> getServicePrice(
             @RequestParam String serviceCode,
             @RequestParam String countryCode) {
-
         Optional<ServiceCountryPrice> price = countryService.getPriceByServiceAndCountry(serviceCode, countryCode);
         if (price.isEmpty()) {
             throw new BadRequestException(

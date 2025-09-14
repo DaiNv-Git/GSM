@@ -38,6 +38,7 @@ public class UserAccountService {
                 .isAdmin(false)
                 .isAgent(false)
                 .isDev(false)
+                .balanceAmount(0d)
                 .isPartner(false)
                 .permission(List.of())
                 .webInfo(webInfo)

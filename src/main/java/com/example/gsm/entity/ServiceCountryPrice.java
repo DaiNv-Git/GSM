@@ -15,8 +15,8 @@ public class ServiceCountryPrice {
 
     private String serviceCode;
     private String countryCode;
-
     private double minPrice;
     private double maxPrice;
     private double pricePerDay;
+    private long time;
 }
