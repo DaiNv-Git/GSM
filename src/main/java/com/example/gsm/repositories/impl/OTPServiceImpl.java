@@ -129,12 +129,26 @@ public class OTPServiceImpl implements OTPService {
         List<OtpResponse.PlatformBreakdown> barChartData = new ArrayList<>();
 
         for (Document d : rows) {
+            Object rawService = d.get("serviceName");
+            String serviceName;
+
+            if (rawService instanceof String) {
+                serviceName = (String) rawService;
+            } else if (rawService instanceof List) {
+                // lấy phần tử đầu tiên trong list hoặc join các giá trị
+                List<?> list = (List<?>) rawService;
+                serviceName = list.isEmpty() ? "OTHER" : String.valueOf(list.get(0));
+            } else {
+                serviceName = "OTHER";
+            }
+
             barChartData.add(new OtpResponse.PlatformBreakdown(
-                    d.getString("serviceName") != null ? d.getString("serviceName") : "OTHER",
+                    serviceName,
                     d.get("orderCountSuccess") != null ? ((Number) d.get("orderCountSuccess")).longValue() : 0L,
                     d.get("orderCountRefund") != null ? ((Number) d.get("orderCountRefund")).longValue() : 0L
             ));
         }
+
         return barChartData;
     }
 

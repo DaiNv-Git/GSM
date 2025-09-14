@@ -74,11 +74,13 @@ public class RentServiceImpl implements RentService {
                 .and("type").is(RENT_TYPE);
 
         if (req.getAccountID() != null && !req.getAccountID().isEmpty()) {
-            c = c.and("accountId").is(req.getAccountID());
+            List<String> accFilter = Collections.singletonList(req.getAccountID());
+            c = c.and("accountId").in(accFilter);
         }
 
         if (req.getCountryCode() != null && !req.getCountryCode().isEmpty()) {
-            c = c.and("stock.countryCode").is(req.getCountryCode());
+            // support cả string lẫn array
+            c = c.and("stock.countryCode").in(req.getCountryCode());
         }
 
         return c;
