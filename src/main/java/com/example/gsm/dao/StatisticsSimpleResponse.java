@@ -3,6 +3,7 @@ package com.example.gsm.dao;
 
 import lombok.Builder;
 import lombok.Data;
+
 import java.util.List;
 
 @Data
@@ -12,7 +13,8 @@ public class StatisticsSimpleResponse {
     private List<TypeGroup> byAppType;
     private List<TypeSeries> timeSeries;
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class Overview {
         private List<TypeTotal> types;               // 5 phần tử (OTP/Rent/SMS/Call/Proxy)
         private long countryCount;                   // distinct country
@@ -22,7 +24,8 @@ public class StatisticsSimpleResponse {
         private double revenueTotal;                 // ✅ tổng doanh thu toàn kỳ (sum(cost))
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class TypeTotal {
         private String type;                         // buy.otp.service...
         private long success;                        // count
@@ -31,7 +34,8 @@ public class StatisticsSimpleResponse {
         private double revenue;                      // ✅ doanh thu của type (sum(cost))
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class TypeGroup {
         private String type;
         private long success;
@@ -40,7 +44,8 @@ public class StatisticsSimpleResponse {
         private List<AppBreakdown> apps;
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class AppBreakdown {
         private String app;
         private long success;
@@ -48,13 +53,15 @@ public class StatisticsSimpleResponse {
         private long total;
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class TypeSeries {
         private String type;
         private List<TimeSeriesItem> points;
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class TimeSeriesItem {
         private String label;
         private long success;

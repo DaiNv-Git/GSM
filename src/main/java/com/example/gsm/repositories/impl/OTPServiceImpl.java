@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -40,7 +41,7 @@ public class OTPServiceImpl implements OTPService {
         }
 
         // Resolve time range
-        PeriodRange range = resolveRange(req.getTimeType(), req.getYear(), req.getMonth());
+        PeriodRange range = resolveRange(req);
 
         // 1) Revenue Metrics
         OtpResponse.RevenueMetrics revenueMetrics = aggregateRevenueMetrics(range);
@@ -57,15 +58,18 @@ public class OTPServiceImpl implements OTPService {
     }
 
     private String validateRequest(OtpRequest req) {
-        if (req.getTimeType() == null) {
-            return "timeType is required";
+        if (req.getTimeType() == null) return "timeType is required";
+        if (req.getYear() == null) return "year is required";
+
+        if (req.getTimeType() == TimeType.MONTH &&
+                (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
+            return "month is required for MONTH and must be 1..12";
         }
-        if (req.getYear() == null) {
-            return "year is required";
-        }
-        if ((req.getTimeType() == TimeType.DAY || req.getTimeType() == TimeType.WEEK)
-                && (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
-            return "month is required for DAY/WEEK and must be 1..12";
+
+        if (req.getTimeType() == TimeType.WEEK) {
+            if (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12) {
+                return "month is required for WEEK and must be 1..12";
+            }
         }
         return "";
     }
@@ -136,7 +140,7 @@ public class OTPServiceImpl implements OTPService {
 
     @Override
     public ResponseCommon<OtpDetailsPagedResponse> getOtpDetails(OtpDetailsRequest req) {
-        PeriodRange range = resolveRange(req.getTimeType(), req.getYear(), req.getMonth());
+        PeriodRange range = resolveRange(req);
 
         Criteria c = Criteria.where("createdAt")
                 .gte(toDate(range.start))
@@ -287,27 +291,26 @@ public class OTPServiceImpl implements OTPService {
 
         List<OtpResponse.TimeSeriesItem> lineChartData = new ArrayList<>();
 
-        if (timeType == TimeType.DAY) {
-            List<LocalDate> dates = range.start.toLocalDate().datesUntil(range.end.toLocalDate())
-                    .collect(Collectors.toList());
-            for (LocalDate date : dates) {
-                String label = date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(date.getDayOfMonth(), new HashMap<>());
+        if (timeType == TimeType.WEEK) {
+            // 7 ngày trong tuần
+            for (int d = 1; d <= 7; d++) {
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(d, new HashMap<>());
                 long success = statusCounts.getOrDefault("SUCCESS", 0L);
                 long refund = statusCounts.getOrDefault("REFUNDED", 0L);
                 long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
-                lineChartData.add(new OtpResponse.TimeSeriesItem(label, success, refund, total));
+                lineChartData.add(new OtpResponse.TimeSeriesItem("D" + d, success, refund, total));
             }
-        } else if (timeType == TimeType.WEEK) {
-            int weeks = (int) Math.ceil(range.end.toLocalDate().lengthOfMonth() / 7.0);
-            for (int w = 0; w < weeks; w++) {
+        } else if (timeType == TimeType.MONTH) {
+            // 4 tuần trong tháng
+            for (int w = 1; w <= 4; w++) {
                 Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(w, new HashMap<>());
                 long success = statusCounts.getOrDefault("SUCCESS", 0L);
                 long refund = statusCounts.getOrDefault("REFUNDED", 0L);
                 long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
-                lineChartData.add(new OtpResponse.TimeSeriesItem("W" + (w + 1), success, refund, total));
+                lineChartData.add(new OtpResponse.TimeSeriesItem("W" + w, success, refund, total));
             }
-        } else { // MONTH
+        } else if (timeType == TimeType.YEAR) {
+            // 12 tháng trong năm
             for (int m = 1; m <= 12; m++) {
                 Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(m, new HashMap<>());
                 long success = statusCounts.getOrDefault("SUCCESS", 0L);
@@ -320,8 +323,10 @@ public class OTPServiceImpl implements OTPService {
                 ));
             }
         }
+
         return lineChartData;
     }
+
     public ResponseCommon<List<ServiceEntity>> advancedFilter(String code,
                                                               String countryCode,
                                                               Boolean isActive,
@@ -426,9 +431,19 @@ public class OTPServiceImpl implements OTPService {
     }
 
     private String bucketExpr(PeriodRange range) {
-        if (range.timeType == TimeType.DAY) return "dayOfMonth(createdAt)";
-        if (range.timeType == TimeType.WEEK) return "floor((dayOfMonth(createdAt)-1)/7)";
-        return "month(createdAt)";
+        if (range.timeType == TimeType.WEEK) {
+            // Bucket theo ngày (1..7)
+            return "dayOfWeek(createdAt)";
+        }
+        if (range.timeType == TimeType.MONTH) {
+            // Bucket theo tuần trong tháng (1..4), mỗi tuần = 7 ngày
+            return "ceil(dayOfMonth(createdAt) / 7)";
+        }
+        if (range.timeType == TimeType.YEAR) {
+            // Bucket theo tháng trong năm (1..12)
+            return "month(createdAt)";
+        }
+        throw new IllegalArgumentException("Unsupported timeType: " + range.timeType);
     }
 
     private static Date toDate(LocalDateTime ldt) {
@@ -450,13 +465,80 @@ public class OTPServiceImpl implements OTPService {
         }
     }
 
-    private PeriodRange resolveRange(TimeType timeType, int year, int month) {
-        if (timeType == TimeType.MONTH) {
-            LocalDate s = LocalDate.of(year, 1, 1);
-            return new PeriodRange(s.atStartOfDay(), s.plusYears(1).atStartOfDay(), timeType);
-        } else {
-            LocalDate anchor = LocalDate.of(year, month, 1);
-            return new PeriodRange(anchor.atStartOfDay(), anchor.plusMonths(1).atStartOfDay(), timeType);
+    private PeriodRange resolveRange(OtpRequest req) {
+        TimeType type = req.getTimeType();
+        int year = req.getYear();
+
+        switch (type) {
+            case YEAR: {
+                // Cả năm
+                LocalDate start = LocalDate.of(year, 1, 1);
+                LocalDate end = start.plusYears(1);
+                return new PeriodRange(start.atStartOfDay(), end.atStartOfDay(), type);
+            }
+            case MONTH: {
+                // Một tháng
+                int month = req.getMonth();
+                LocalDate start = LocalDate.of(year, month, 1);
+                LocalDate end = start.plusMonths(1);
+                return new PeriodRange(start.atStartOfDay(), end.atStartOfDay(), type);
+            }
+            case WEEK: {
+                // Một tuần (Mon → Sun) trong tháng đã chọn
+                int month = req.getMonth();
+                LocalDate anchor = LocalDate.of(year, month, 1);
+
+                // Tìm tuần chứa ngày hiện tại
+                LocalDate today = LocalDate.now();
+                LocalDate baseDay = (today.getYear() == year && today.getMonthValue() == month)
+                        ? today
+                        : anchor;
+
+                LocalDate startOfWeek = baseDay.with(DayOfWeek.MONDAY);
+                LocalDate endOfWeek = startOfWeek.plusWeeks(1);
+
+                return new PeriodRange(startOfWeek.atStartOfDay(), endOfWeek.atStartOfDay(), type);
+            }
+            default:
+                throw new IllegalArgumentException("Unsupported TimeType: " + type);
+        }
+    }
+    private PeriodRange resolveRange(OtpDetailsRequest req) {
+        TimeType type = req.getTimeType();
+        int year = req.getYear();
+
+        switch (type) {
+            case YEAR: {
+                // Cả năm
+                LocalDate start = LocalDate.of(year, 1, 1);
+                LocalDate end = start.plusYears(1);
+                return new PeriodRange(start.atStartOfDay(), end.atStartOfDay(), type);
+            }
+            case MONTH: {
+                // Một tháng
+                int month = req.getMonth();
+                LocalDate start = LocalDate.of(year, month, 1);
+                LocalDate end = start.plusMonths(1);
+                return new PeriodRange(start.atStartOfDay(), end.atStartOfDay(), type);
+            }
+            case WEEK: {
+                // Một tuần (Mon → Sun) trong tháng đã chọn
+                int month = req.getMonth();
+                LocalDate anchor = LocalDate.of(year, month, 1);
+
+                // Tìm tuần chứa ngày hiện tại
+                LocalDate today = LocalDate.now();
+                LocalDate baseDay = (today.getYear() == year && today.getMonthValue() == month)
+                        ? today
+                        : anchor;
+
+                LocalDate startOfWeek = baseDay.with(DayOfWeek.MONDAY);
+                LocalDate endOfWeek = startOfWeek.plusWeeks(1);
+
+                return new PeriodRange(startOfWeek.atStartOfDay(), endOfWeek.atStartOfDay(), type);
+            }
+            default:
+                throw new IllegalArgumentException("Unsupported TimeType: " + type);
         }
     }
 }

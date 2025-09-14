@@ -8,8 +8,11 @@ import java.util.List;
 
 public interface OTPService {
     ResponseCommon<OtpResponse> getOverview(OtpRequest req);
+
     ResponseCommon<OtpDetailsPagedResponse> getOtpDetails(OtpDetailsRequest req);
+
     ResponseCommon<List<Document>> findServicesByAppName(String name);
+
     ResponseCommon<List<ServiceEntity>> advancedFilter(String code,
                                                        String countryCode,
                                                        Boolean isActive,

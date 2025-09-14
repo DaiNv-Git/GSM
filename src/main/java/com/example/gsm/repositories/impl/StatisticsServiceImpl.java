@@ -77,15 +77,18 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     private String validateGetStatistics(StatisticsRequest req) {
-        if (req.getTimeType() == null) {
-            return "timeType is required";
+        if (req.getTimeType() == null) return "timeType is required";
+        if (req.getYear() == null) return "year is required";
+
+        if (req.getTimeType() == TimeType.MONTH &&
+                (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
+            return "month is required for MONTH and must be 1..12";
         }
-        if (req.getYear() == null) {
-            return "year is required";
-        }
-        if ((req.getTimeType() == TimeType.DAY || req.getTimeType() == TimeType.WEEK)
-                && (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
-            return "month is required for DAY/WEEK and must be 1..12";
+
+        if (req.getTimeType() == TimeType.WEEK) {
+            if (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12) {
+                return "month is required for WEEK and must be 1..12";
+            }
         }
         return "";
     }
@@ -240,12 +243,19 @@ public class StatisticsServiceImpl implements StatisticsService {
             Map<Integer, Document> byBucket = map.getOrDefault(type, new HashMap<>());
             List<StatisticsSimpleResponse.TimeSeriesItem> points = new ArrayList<>();
 
-            if (range.timeType == TimeType.DAY) {
-                int days = YearMonth.of(range.start.getYear(), range.start.getMonth()).lengthOfMonth();
-                for (int d = 1; d <= days; d++) points.add(point(String.valueOf(d), byBucket.get(d)));
-            } else if (range.timeType == TimeType.WEEK) {
-                for (int w = 0; w < 4; w++) points.add(point("W" + (w + 1), byBucket.get(w)));
-            } else {
+            if (range.timeType == TimeType.WEEK) {
+                // 7 ngày trong tuần (Mon..Sun)
+                String[] weekDays = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+                for (int d = 1; d <= 7; d++) {
+                    points.add(point(weekDays[d - 1], byBucket.get(d)));
+                }
+            } else if (range.timeType == TimeType.MONTH) {
+                // 4 tuần trong tháng
+                for (int w = 0; w < 4; w++) {
+                    points.add(point("W" + (w + 1), byBucket.get(w)));
+                }
+            } else if (range.timeType == TimeType.YEAR) {
+                // 12 tháng trong năm
                 for (int m = 1; m <= 12; m++) {
                     points.add(point(Month.of(m).getDisplayName(TextStyle.SHORT, Locale.ENGLISH), byBucket.get(m)));
                 }
@@ -287,23 +297,59 @@ public class StatisticsServiceImpl implements StatisticsService {
     // Helpers
     // ======================================================================================
     private String bucketExpr(PeriodRange range) {
-        if (range.timeType == TimeType.DAY) return "dayOfMonth(createdAt)";
-        if (range.timeType == TimeType.WEEK) return "floor((dayOfMonth(createdAt)-1)/7)";
-        return "month(createdAt)";
+        if (range.timeType == TimeType.WEEK) {
+            // Bucket theo ngày (1..7)
+            return "dayOfWeek(createdAt)";
+        }
+        if (range.timeType == TimeType.MONTH) {
+            // Bucket theo tuần trong tháng (1..4), mỗi tuần = 7 ngày
+            return "ceil(dayOfMonth(createdAt) / 7)";
+        }
+        if (range.timeType == TimeType.YEAR) {
+            // Bucket theo tháng trong năm (1..12)
+            return "month(createdAt)";
+        }
+        throw new IllegalArgumentException("Unsupported timeType: " + range.timeType);
     }
 
     private PeriodRange resolveRange(StatisticsRequest req) {
-        TimeType t = req.getTimeType();
-        int year = req.getYear();
-        if (t == TimeType.MONTH) {
-            LocalDate s = LocalDate.of(year, 1, 1);
-            return new PeriodRange(s.atStartOfDay(), s.plusYears(1).atStartOfDay(), t);
-        } else {
-            int month = req.getMonth();
-            LocalDate anchor = LocalDate.of(year, month, 1);
-            return new PeriodRange(anchor.atStartOfDay(), anchor.plusMonths(1).atStartOfDay(), t);
+            TimeType type = req.getTimeType();
+            int year = req.getYear();
+
+            switch (type) {
+                case YEAR: {
+                    // Cả năm
+                    LocalDate start = LocalDate.of(year, 1, 1);
+                    LocalDate end = start.plusYears(1);
+                    return new PeriodRange(start.atStartOfDay(), end.atStartOfDay(), type);
+                }
+                case MONTH: {
+                    // Một tháng
+                    int month = req.getMonth();
+                    LocalDate start = LocalDate.of(year, month, 1);
+                    LocalDate end = start.plusMonths(1);
+                    return new PeriodRange(start.atStartOfDay(), end.atStartOfDay(), type);
+                }
+                case WEEK: {
+                    // Một tuần (Mon → Sun) trong tháng đã chọn
+                    int month = req.getMonth();
+                    LocalDate anchor = LocalDate.of(year, month, 1);
+
+                    // Tìm tuần chứa ngày hiện tại
+                    LocalDate today = LocalDate.now();
+                    LocalDate baseDay = (today.getYear() == year && today.getMonthValue() == month)
+                            ? today
+                            : anchor;
+
+                    LocalDate startOfWeek = baseDay.with(DayOfWeek.MONDAY);
+                    LocalDate endOfWeek = startOfWeek.plusWeeks(1);
+
+                    return new PeriodRange(startOfWeek.atStartOfDay(), endOfWeek.atStartOfDay(), type);
+                }
+                default:
+                    throw new IllegalArgumentException("Unsupported TimeType: " + type);
+            }
         }
-    }
 
     private static Date toDate(LocalDateTime ldt) {
         return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());

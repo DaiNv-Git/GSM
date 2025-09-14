@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -36,6 +37,7 @@ public class RentServiceImpl implements RentService {
     private final MongoTemplate mongo;
 
     private static final String RENT_TYPE = "rent.otp.service";
+
     @Override
     public ResponseCommon<RentResponse> getRent(RentRequest req) {
         // Validate request
@@ -45,46 +47,61 @@ public class RentServiceImpl implements RentService {
         }
 
         // Resolve time range
-        PeriodRange range = resolveRange(req.getTimeType(), req.getYear(), req.getMonth());
+        PeriodRange range = resolveRange(req);
 
         // 1) Revenue Metrics
-        RentResponse.RevenueMetrics revenueMetrics = aggregateRevenueMetrics(range);
+        RentResponse.RevenueMetrics revenueMetrics = aggregateRevenueMetrics(range,req);
 
         // 2) Fetch rentInfos
-        List<RentResponse.RentInfo> rentInfos = fetchRentInfos(range);
+        List<RentResponse.RentInfo> rentInfos = fetchRentInfos(range,req);
 
         // 3) Bar Chart: Success and Refund count by serviceCode
-        List<RentResponse.ChartData> successRefundChart = aggregateSuccessRefundChart(range);
+        List<RentResponse.ChartData> successRefundChart = aggregateSuccessRefundChart(range,req);
 
         // 4) Line Chart: Total revenue by serviceCode
 //        List<RentResponse.RevenueData> revenueChart = aggregateRevenueChart(range);
-        List<RentResponse.TimeSeriesItem> lineChartData = aggregateLineChart(range, req.getTimeType());
+        List<RentResponse.TimeSeriesItem> lineChartData = aggregateLineChart(range, req);
 
         // Build response
         RentResponse response = new RentResponse(revenueMetrics, rentInfos, successRefundChart, lineChartData);
         return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, response);
     }
 
-
-    private String validateRequest(RentRequest req) {
-        if (req.getTimeType() == null) {
-            return "timeType is required";
-        }
-        if (req.getYear() == null) {
-            return "year is required";
-        }
-        if ((req.getTimeType() == TimeType.DAY || req.getTimeType() == TimeType.WEEK)
-                && (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
-            return "month is required for DAY/WEEK and must be 1..12";
-        }
-        return "";
-    }
-
-    private List<RentResponse.RentInfo> fetchRentInfos(PeriodRange range) {
+    private Criteria buildCriteria(PeriodRange range, RentRequest req) {
         Criteria c = Criteria.where("createdAt")
                 .gte(toDate(range.start))
                 .lt(toDate(range.end))
                 .and("type").is(RENT_TYPE);
+
+        if (req.getAccountID() != null && !req.getAccountID().isEmpty()) {
+            c = c.and("accountId").is(req.getAccountID());
+        }
+
+        if (req.getCountryCode() != null && !req.getCountryCode().isEmpty()) {
+            c = c.and("stock.countryCode").is(req.getCountryCode());
+        }
+
+        return c;
+    }
+    private String validateRequest(RentRequest req) {
+        if (req.getTimeType() == null) return "timeType is required";
+        if (req.getYear() == null) return "year is required";
+
+        if (req.getTimeType() == TimeType.MONTH &&
+                (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
+            return "month is required for MONTH and must be 1..12";
+        }
+
+        if (req.getTimeType() == TimeType.WEEK) {
+            if (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12) {
+                return "month is required for WEEK and must be 1..12";
+            }
+        }
+        return "";
+    }
+
+    private List<RentResponse.RentInfo> fetchRentInfos(PeriodRange range, RentRequest req) {
+        Criteria c = buildCriteria(range, req);
 
         Aggregation agg = newAggregation(
                 match(c),
@@ -183,11 +200,9 @@ public class RentServiceImpl implements RentService {
 
         return rentInfos;
     }
-    private List<RentResponse.TimeSeriesItem> aggregateLineChart(PeriodRange range, TimeType timeType) {
-        Criteria c = Criteria.where("createdAt")
-                .gte(toDate(range.start))
-                .lt(toDate(range.end))
-                .and("type").is(RENT_TYPE);
+
+    private List<RentResponse.TimeSeriesItem> aggregateLineChart(PeriodRange range,RentRequest req) {
+        Criteria c = buildCriteria(range, req);
 
         Aggregation agg = newAggregation(
                 match(c),
@@ -217,27 +232,26 @@ public class RentServiceImpl implements RentService {
 
         List<RentResponse.TimeSeriesItem> lineChartData = new ArrayList<>();
 
-        if (timeType == TimeType.DAY) {
-            List<LocalDate> dates = range.start.toLocalDate().datesUntil(range.end.toLocalDate())
-                    .collect(Collectors.toList());
-            for (LocalDate date : dates) {
-                String label = date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(date.getDayOfMonth(), new HashMap<>());
+        if (req.getTimeType() == TimeType.WEEK) {
+            // 7 ngày trong tuần
+            for (int d = 1; d <= 7; d++) {
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(d, new HashMap<>());
                 long success = statusCounts.getOrDefault("SUCCESS", 0L);
                 long refund = statusCounts.getOrDefault("REFUNDED", 0L);
                 long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
-                lineChartData.add(new RentResponse.TimeSeriesItem(label, success, refund, total));
+                lineChartData.add(new RentResponse.TimeSeriesItem("D" + d, success, refund, total));
             }
-        } else if (timeType == TimeType.WEEK) {
-            int weeks = (int) Math.ceil(range.end.toLocalDate().lengthOfMonth() / 7.0);
-            for (int w = 0; w < weeks; w++) {
+        } else if (req.getTimeType() == TimeType.MONTH) {
+            // 4 tuần trong tháng
+            for (int w = 1; w <= 4; w++) {
                 Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(w, new HashMap<>());
                 long success = statusCounts.getOrDefault("SUCCESS", 0L);
                 long refund = statusCounts.getOrDefault("REFUNDED", 0L);
                 long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
-                lineChartData.add(new RentResponse.TimeSeriesItem("W" + (w + 1), success, refund, total));
+                lineChartData.add(new RentResponse.TimeSeriesItem("W" + w, success, refund, total));
             }
-        } else { // MONTH
+        } else if (req.getTimeType() == TimeType.YEAR) {
+            // 12 tháng trong năm
             for (int m = 1; m <= 12; m++) {
                 Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(m, new HashMap<>());
                 long success = statusCounts.getOrDefault("SUCCESS", 0L);
@@ -252,11 +266,9 @@ public class RentServiceImpl implements RentService {
         }
         return lineChartData;
     }
-    private RentResponse.RevenueMetrics aggregateRevenueMetrics(PeriodRange range) {
-        Criteria c = Criteria.where("createdAt")
-                .gte(toDate(range.start))
-                .lt(toDate(range.end))
-                .and("type").is(RENT_TYPE);
+
+    private RentResponse.RevenueMetrics aggregateRevenueMetrics(PeriodRange range,RentRequest req) {
+        Criteria c = buildCriteria(range, req);
 
         Aggregation agg = newAggregation(
                 match(c),
@@ -283,70 +295,6 @@ public class RentServiceImpl implements RentService {
         return new RentResponse.RevenueMetrics(totalRevenue, netRevenue, commission);
     }
 
-    private List<String> fetchUsernames(PeriodRange range) {
-        Criteria c = Criteria.where("createdAt")
-                .gte(toDate(range.start))
-                .lt(toDate(range.end))
-                .and("type").is(RENT_TYPE);
-
-        Aggregation agg = newAggregation(
-                match(c),
-                project("accountId"), // Lấy accountId từ orders
-                group("accountId")
-        );
-
-        List<Document> accountIds = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
-        List<Long> accountIdList = accountIds.stream()
-                .map(d -> {
-                    Object id = d.get("_id");
-                    if (id instanceof Number) {
-                        return ((Number) id).longValue();
-                    } else if (id instanceof String) {
-                        try {
-                            return Long.parseLong((String) id);
-                        } catch (NumberFormatException e) {
-                            return null;
-                        }
-                    }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        if (accountIdList.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // Truy vấn bảng users dựa trên accountIdList, lấy firstName và lastName
-        Criteria userCriteria = Criteria.where("accountId").in(accountIdList);
-        Aggregation userAgg = newAggregation(
-                match(userCriteria),
-                project("firstName", "lastName") // Lấy firstName và lastName
-                        .andExclude("_id") // Loại trừ _id nếu không cần
-        );
-        List<Document> userDocs = mongo.aggregate(userAgg, "users", Document.class).getMappedResults();
-        return userDocs.stream()
-                .map(d -> {
-                    // Xử lý firstName và lastName, kiểm tra nếu là ArrayList hoặc khác String
-                    Object firstNameObj = d.get("firstName");
-                    Object lastNameObj = d.get("lastName");
-                    String firstName = extractString(firstNameObj);
-                    String lastName = extractString(lastNameObj);
-
-                    // Nối firstName và lastName, xử lý null/rỗng
-                    if (firstName != null && !firstName.trim().isEmpty()) {
-                        return lastName != null && !lastName.trim().isEmpty()
-                                ? firstName.trim() + " " + lastName.trim()
-                                : firstName.trim();
-                    } else if (lastName != null && !lastName.trim().isEmpty()) {
-                        return lastName.trim();
-                    }
-                    return null; // Trả về null nếu cả hai đều null/rỗng
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
-
     // Helper method to safely extract String from Object
     private String extractString(Object obj) {
         if (obj == null) return null;
@@ -370,100 +318,49 @@ public class RentServiceImpl implements RentService {
         return s.isEmpty() ? null : s;
     }
 
-//    private List<RentResponse.ChartData> aggregateSuccessRefundChart(PeriodRange range) {
-//        Criteria c = Criteria.where("createdAt")
-//                .gte(toDate(range.start))
-//                .lt(toDate(range.end))
-//                .and("type").is(RENT_TYPE);
-//
-//        Aggregation agg = newAggregation(
-//                match(c),
-//                project("statusCode", "isRefund", "isActive")
-//                        .and("stock.serviceCode").as("serviceCode"),
-//                group("serviceCode")
-//                        .sum(ConditionalOperators.when(Criteria.where("statusCode").is("SUCCESS")).then(1).otherwise(0)).as("successCount")
-//                        .sum(ConditionalOperators.when(Criteria.where("isRefund").is(true)).then(1).otherwise(0)).as("refundCount")
-//                        .sum(ConditionalOperators.when(Criteria.where("isActive").is(false)).then(1).otherwise(0)).as("bannedCount"),
-//                project("successCount", "refundCount", "bannedCount")
-//                        .and("_id").as("serviceCode"),
-//                sort(Sort.Direction.DESC, "successCount")
-//        );
-//
-//        List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
-//        return rows.stream()
-//                .map(d -> new RentResponse.ChartData(
-//                        extractServiceCode(d.get("serviceCode")),
-//                        d.get("successCount") != null ? ((Number) d.get("successCount")).doubleValue() : 0L,
-//                        d.get("refundCount") != null ? ((Number) d.get("refundCount")).doubleValue() : 0L,
-//                        0.0
-//                ))
-//                .collect(Collectors.toList());
-//
-//    }
-private List<RentResponse.ChartData> aggregateSuccessRefundChart(PeriodRange range) {
-    Criteria c = Criteria.where("createdAt")
-            .gte(toDate(range.start))
-            .lt(toDate(range.end))
-            .and("type").is(RENT_TYPE);
+    private List<RentResponse.ChartData> aggregateSuccessRefundChart(PeriodRange range,RentRequest req) {
+        Criteria c = buildCriteria(range, req);
 
-    Aggregation agg = newAggregation(
-            match(c),
-            project("statusCode", "isRefund", "isActive")
-                    .and("stock.serviceCode").as("serviceCode"),
-            group("serviceCode")
-                    .sum(ConditionalOperators.when(Criteria.where("statusCode").is("SUCCESS")).then(1).otherwise(0)).as("successCount")
-                    .sum(ConditionalOperators.when(Criteria.where("isRefund").is(true)).then(1).otherwise(0)).as("refundCount")
-                    .sum(ConditionalOperators.when(Criteria.where("isActive").is(false)).then(1).otherwise(0)).as("bannedCount"),
-            project("successCount", "refundCount", "bannedCount")
-                    .and("_id").as("serviceCode"),
-            sort(Sort.Direction.DESC, "successCount")
-    );
+        Aggregation agg = newAggregation(
+                match(c),
+                project("statusCode", "isRefund", "isActive")
+                        .and("stock.serviceCode").as("serviceCode"),
+                group("serviceCode")
+                        .sum(ConditionalOperators.when(Criteria.where("statusCode").is("SUCCESS")).then(1).otherwise(0)).as("successCount")
+                        .sum(ConditionalOperators.when(Criteria.where("isRefund").is(true)).then(1).otherwise(0)).as("refundCount")
+                        .sum(ConditionalOperators.when(Criteria.where("isActive").is(false)).then(1).otherwise(0)).as("bannedCount"),
+                project("successCount", "refundCount", "bannedCount")
+                        .and("_id").as("serviceCode"),
+                sort(Sort.Direction.DESC, "successCount")
+        );
 
-    List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
+        List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
 
-    List<RentResponse.ChartData> result = new ArrayList<>();
+        List<RentResponse.ChartData> result = new ArrayList<>();
 
-    for (Document d : rows) {
-        Object serviceCodeObj = d.get("serviceCode");
-        double successCount = d.get("successCount") != null ? ((Number) d.get("successCount")).doubleValue() : 0L;
-        double refundCount = d.get("refundCount") != null ? ((Number) d.get("refundCount")).doubleValue() : 0L;
-        double bannedCount = d.get("bannedCount") != null ? ((Number) d.get("bannedCount")).doubleValue() : 0L;
+        for (Document d : rows) {
+            Object serviceCodeObj = d.get("serviceCode");
+            double successCount = d.get("successCount") != null ? ((Number) d.get("successCount")).doubleValue() : 0L;
+            double refundCount = d.get("refundCount") != null ? ((Number) d.get("refundCount")).doubleValue() : 0L;
+            double bannedCount = d.get("bannedCount") != null ? ((Number) d.get("bannedCount")).doubleValue() : 0L;
 
-        if (serviceCodeObj instanceof List) {
-            List<?> list = (List<?>) serviceCodeObj;
-            for (Object item : list) {
-                String code = item != null ? item.toString() : "OTHER";
+            if (serviceCodeObj instanceof List) {
+                List<?> list = (List<?>) serviceCodeObj;
+                for (Object item : list) {
+                    String code = item != null ? item.toString() : "OTHER";
+                    result.add(new RentResponse.ChartData(code, successCount, refundCount, bannedCount));
+                }
+            } else {
+                String code = serviceCodeObj != null ? serviceCodeObj.toString() : "OTHER";
                 result.add(new RentResponse.ChartData(code, successCount, refundCount, bannedCount));
             }
-        } else {
-            String code = serviceCodeObj != null ? serviceCodeObj.toString() : "OTHER";
-            result.add(new RentResponse.ChartData(code, successCount, refundCount, bannedCount));
         }
+
+        return result;
     }
 
-    return result;
-}
-
-    private String extractServiceCode(Object obj) {
-        if (obj == null) return "OTHER";
-        if (obj instanceof String) return (String) obj;
-        if (obj instanceof List) {
-            List<?> list = (List<?>) obj;
-            return list.stream()
-                    .filter(Objects::nonNull)
-                    .map(Object::toString)
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .findFirst() // chỉ lấy phần tử đầu tiên nếu cần
-                    .orElse("OTHER");
-        }
-        return obj.toString();
-    }
-    private List<RentResponse.RevenueData> aggregateRevenueChart(PeriodRange range) {
-        Criteria c = Criteria.where("createdAt")
-                .gte(toDate(range.start))
-                .lt(toDate(range.end))
-                .and("type").is(RENT_TYPE);
+    private List<RentResponse.RevenueData> aggregateRevenueChart(PeriodRange range,RentRequest req) {
+        Criteria c = buildCriteria(range, req);
 
         Aggregation agg = newAggregation(
                 match(c),
@@ -526,9 +423,19 @@ private List<RentResponse.ChartData> aggregateSuccessRefundChart(PeriodRange ran
 //    }
 
     private String bucketExpr(PeriodRange range) {
-        if (range.timeType == TimeType.DAY) return "dayOfMonth(createdAt)";
-        if (range.timeType == TimeType.WEEK) return "floor((dayOfMonth(createdAt)-1)/7)";
-        return "month(createdAt)";
+        if (range.timeType == TimeType.WEEK) {
+            // Bucket theo ngày (1..7)
+            return "dayOfWeek(createdAt)";
+        }
+        if (range.timeType == TimeType.MONTH) {
+            // Bucket theo tuần trong tháng (1..4), mỗi tuần = 7 ngày
+            return "ceil(dayOfMonth(createdAt) / 7)";
+        }
+        if (range.timeType == TimeType.YEAR) {
+            // Bucket theo tháng trong năm (1..12)
+            return "month(createdAt)";
+        }
+        throw new IllegalArgumentException("Unsupported timeType: " + range.timeType);
     }
 
     private static Date toDate(LocalDateTime ldt) {
@@ -550,14 +457,42 @@ private List<RentResponse.ChartData> aggregateSuccessRefundChart(PeriodRange ran
         }
     }
 
-    private PeriodRange resolveRange(TimeType timeType, int year, int month) {
+    private PeriodRange resolveRange(RentRequest req) {
+        TimeType type = req.getTimeType();
+        int year = req.getYear();
 
-        if (timeType == TimeType.MONTH) {
-            LocalDate s = LocalDate.of(year, 1, 1);
-            return new PeriodRange(s.atStartOfDay(), s.plusYears(1).atStartOfDay(), timeType);
-        } else {
-            LocalDate anchor = LocalDate.of(year, month, 1);
-            return new PeriodRange(anchor.atStartOfDay(), anchor.plusMonths(1).atStartOfDay(), timeType);
+        switch (type) {
+            case YEAR: {
+                // Cả năm
+                LocalDate start = LocalDate.of(year, 1, 1);
+                LocalDate end = start.plusYears(1);
+                return new PeriodRange(start.atStartOfDay(), end.atStartOfDay(), type);
+            }
+            case MONTH: {
+                // Một tháng
+                int month = req.getMonth();
+                LocalDate start = LocalDate.of(year, month, 1);
+                LocalDate end = start.plusMonths(1);
+                return new PeriodRange(start.atStartOfDay(), end.atStartOfDay(), type);
+            }
+            case WEEK: {
+                // Một tuần (Mon → Sun) trong tháng đã chọn
+                int month = req.getMonth();
+                LocalDate anchor = LocalDate.of(year, month, 1);
+
+                // Tìm tuần chứa ngày hiện tại
+                LocalDate today = LocalDate.now();
+                LocalDate baseDay = (today.getYear() == year && today.getMonthValue() == month)
+                        ? today
+                        : anchor;
+
+                LocalDate startOfWeek = baseDay.with(DayOfWeek.MONDAY);
+                LocalDate endOfWeek = startOfWeek.plusWeeks(1);
+
+                return new PeriodRange(startOfWeek.atStartOfDay(), endOfWeek.atStartOfDay(), type);
+            }
+            default:
+                throw new IllegalArgumentException("Unsupported TimeType: " + type);
         }
     }
 

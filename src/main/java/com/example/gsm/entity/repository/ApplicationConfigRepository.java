@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface ApplicationConfigRepository extends MongoRepository<ApplicationConfig, String> {
     ApplicationConfig findByApplicationName(String applicationName);
+
     List<ApplicationConfig> findAllByOrderByCreatedAtDesc();
 
 }

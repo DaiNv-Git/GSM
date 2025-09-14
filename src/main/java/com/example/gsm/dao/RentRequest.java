@@ -11,5 +11,7 @@ public class RentRequest {
     private TimeType timeType;
     private Integer year;
     private Integer month;
+    private String accountID;
+    private String countryCode;
 }
 

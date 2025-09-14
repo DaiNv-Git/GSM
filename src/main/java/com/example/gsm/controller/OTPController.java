@@ -35,10 +35,12 @@ public class OTPController {
     public ResponseCommon<OtpResponse> getOTPManager(@RequestBody OtpRequest req) {
         return otpService.getOverview(req);
     }
+
     @PostMapping("/details")
     public ResponseCommon<OtpDetailsPagedResponse> getOTPDetails(@RequestBody OtpDetailsRequest req) {
         return otpService.getOtpDetails(req);
     }
+
     @GetMapping("/services/get-all")
     public ResponseCommon<List<ServiceEntity>> getAll() {
         return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.findAll());
@@ -69,7 +71,7 @@ public class OTPController {
                 .updatedAt(new Date())
                 .build();
 
-        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE,repository.save(service));
+        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.save(service));
     }
 
     @PutMapping("/services/update/{id}")
@@ -91,13 +93,13 @@ public class OTPController {
         service.setRentDurationPrices(req.getRentDurationPrices());
         service.setUpdatedAt(new Date());
 
-        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE,repository.save(service));
+        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.save(service));
     }
 
     @DeleteMapping("/services/delete/{id}")
     public ResponseCommon<?> delete(@PathVariable String id) {
         repository.deleteById(id);
-        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE,null);
+        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, null);
     }
 
     @GetMapping("/services/search-details")

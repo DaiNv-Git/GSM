@@ -18,6 +18,7 @@ public class RentController {
 
     @Autowired
     RentService rentService;
+
     @PostMapping("/overview")
     public ResponseCommon<RentResponse> getRentManager(@RequestBody RentRequest req) {
         return rentService.getRent(req);

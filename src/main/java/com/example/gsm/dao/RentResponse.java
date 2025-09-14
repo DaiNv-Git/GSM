@@ -29,7 +29,7 @@ public class RentResponse {
     @NoArgsConstructor
     public static class RentInfo {
         private String usernames;
-        private String type ="OTP";
+        private String type = "OTP";
         private String status;
         private String accountId;
         private String phoneNumber;

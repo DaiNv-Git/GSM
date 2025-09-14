@@ -40,7 +40,7 @@ public class ApplicationConfigServiceImpl implements ApplicationConfigService {
             ApplicationConfig config = repository.findByApplicationName(appName);
             if (config == null) {
                 log.warn("ApplicationConfig not found for name: {}", appName);
-                throw new BadRequestException(ErrorCode.BAD_EXCEPTION,"ApplicationConfig not found: " + appName);
+                throw new BadRequestException(ErrorCode.BAD_EXCEPTION, "ApplicationConfig not found: " + appName);
             }
             log.info("Found config: {}", config);
             return config;
@@ -69,7 +69,7 @@ public class ApplicationConfigServiceImpl implements ApplicationConfigService {
             log.info("Updating ApplicationConfig with id {}", id);
             if (!repository.existsById(id)) {
                 log.warn("Cannot update: config id {} not found", id);
-                throw new BadRequestException(ErrorCode.BAD_EXCEPTION,"ApplicationConfig not found with id: " + id);
+                throw new BadRequestException(ErrorCode.BAD_EXCEPTION, "ApplicationConfig not found with id: " + id);
             }
             updated.setId(id);
             ApplicationConfig saved = repository.save(updated);
@@ -87,7 +87,7 @@ public class ApplicationConfigServiceImpl implements ApplicationConfigService {
             log.info("Deleting ApplicationConfig with id {}", id);
             if (!repository.existsById(id)) {
                 log.warn("Cannot delete: config id {} not found", id);
-                throw new BadRequestException(ErrorCode.BAD_EXCEPTION,"ApplicationConfig not found with id: " + id);
+                throw new BadRequestException(ErrorCode.BAD_EXCEPTION, "ApplicationConfig not found with id: " + id);
 
             }
             repository.deleteById(id);
