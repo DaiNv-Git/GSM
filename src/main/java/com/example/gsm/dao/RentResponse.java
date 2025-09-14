@@ -11,9 +11,9 @@ import java.util.List;
 @AllArgsConstructor
 public class RentResponse {
     private RevenueMetrics revenueMetrics;
-    private List<String> usernames;
+    private List<RentInfo> rentInfos;
     private List<ChartData> successRefundChart;
-    private List<RevenueData> revenueChart;
+    private List<TimeSeriesItem> revenueChart;
 
     @Data
     @AllArgsConstructor
@@ -27,12 +27,38 @@ public class RentResponse {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
+    public static class RentInfo {
+        private String usernames;
+        private String type ="OTP";
+        private String status;
+        private String accountId;
+        private String phoneNumber;
+        private String serviceCode;
+        private String cost;
+        private String createdAt;
+        private String expiredAt;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class ChartData {
         private String serviceCode;
         private double successCount;
         private double refundCount;
         private double revenue;
     }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class TimeSeriesItem {
+        private String label;
+        private long success;
+        private long refund;
+        private long total;
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

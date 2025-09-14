@@ -19,6 +19,7 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.example.gsm.comon.Constants.CORE_ERROR_CODE;
 import static com.example.gsm.comon.Constants.SUCCESS_CODE;
@@ -49,17 +50,18 @@ public class RentServiceImpl implements RentService {
         // 1) Revenue Metrics
         RentResponse.RevenueMetrics revenueMetrics = aggregateRevenueMetrics(range);
 
-        // 2) Fetch usernames from accountId
-        List<String> usernames = fetchUsernames(range);
+        // 2) Fetch rentInfos
+        List<RentResponse.RentInfo> rentInfos = fetchRentInfos(range);
 
         // 3) Bar Chart: Success and Refund count by serviceCode
         List<RentResponse.ChartData> successRefundChart = aggregateSuccessRefundChart(range);
 
         // 4) Line Chart: Total revenue by serviceCode
-        List<RentResponse.RevenueData> revenueChart = aggregateRevenueChart(range);
+//        List<RentResponse.RevenueData> revenueChart = aggregateRevenueChart(range);
+        List<RentResponse.TimeSeriesItem> lineChartData = aggregateLineChart(range, req.getTimeType());
 
         // Build response
-        RentResponse response = new RentResponse(revenueMetrics, usernames, successRefundChart, revenueChart);
+        RentResponse response = new RentResponse(revenueMetrics, rentInfos, successRefundChart, lineChartData);
         return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, response);
     }
 
@@ -78,6 +80,178 @@ public class RentServiceImpl implements RentService {
         return "";
     }
 
+    private List<RentResponse.RentInfo> fetchRentInfos(PeriodRange range) {
+        Criteria c = Criteria.where("createdAt")
+                .gte(toDate(range.start))
+                .lt(toDate(range.end))
+                .and("type").is(RENT_TYPE);
+
+        Aggregation agg = newAggregation(
+                match(c),
+                project("_id", "statusCode", "cost", "createdAt", "accountId")
+                        .and("stock.serviceCode").as("serviceCode")
+                        .and("stock.phone").as("phoneNumber")
+                        .and("stock.expiredAt").as("expiredAt")
+        );
+
+        List<Document> orders = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
+        if (orders.isEmpty()) return Collections.emptyList();
+
+        // Lấy danh sách accountId kiểu String
+        Set<String> accountIds = orders.stream()
+                .map(d -> d.get("accountId"))
+                .filter(Objects::nonNull)
+                .flatMap(acc -> {
+                    if (acc instanceof List) return ((List<?>) acc).stream().map(Object::toString);
+                    else return Stream.of(acc.toString());
+                })
+                .collect(Collectors.toSet());
+
+        // Lấy username từ users collection
+        List<Document> userDocsRaw = mongo.findAll(Document.class, "users");
+        Map<String, String> accountIdToUsername = new HashMap<>();
+
+        for (Document u : userDocsRaw) {
+            Object accObj = u.get("accountId");
+            List<String> accIdList = new ArrayList<>();
+            if (accObj instanceof List) {
+                ((List<?>) accObj).forEach(a -> {
+                    if (a != null && accountIds.contains(a.toString())) accIdList.add(a.toString());
+                });
+            } else if (accObj != null && accountIds.contains(accObj.toString())) {
+                accIdList.add(accObj.toString());
+            }
+
+            String firstName = extractString(u.get("firstName"));
+            String lastName = extractString(u.get("lastName"));
+            String username = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+
+            for (String accId : accIdList) {
+                accountIdToUsername.put(accId, username);
+            }
+        }
+
+        // Map orders -> RentInfo, tránh duplicate cùng serviceCode và accountId
+        List<RentResponse.RentInfo> rentInfos = new ArrayList<>();
+        Set<String> seenKeys = new HashSet<>();
+
+        for (Document d : orders) {
+            Object accObj = d.get("accountId");
+            List<String> accIdList = new ArrayList<>();
+            if (accObj instanceof List) {
+                ((List<?>) accObj).forEach(a -> {
+                    if (a != null) accIdList.add(a.toString());
+                });
+            } else if (accObj != null) {
+                accIdList.add(accObj.toString());
+            }
+
+            Object serviceCodeObj = d.get("serviceCode");
+            List<String> serviceCodes = new ArrayList<>();
+            if (serviceCodeObj instanceof List) {
+                ((List<?>) serviceCodeObj).forEach(sc -> {
+                    if (sc != null) serviceCodes.add(sc.toString());
+                });
+            } else if (serviceCodeObj != null) {
+                serviceCodes.add(serviceCodeObj.toString());
+            } else {
+                serviceCodes.add("OTHER");
+            }
+
+            for (String accId : accIdList) {
+                String username = accountIdToUsername.get(accId);
+                for (String sc : serviceCodes) {
+                    String key = accId + "|" + sc;
+
+                    if (!seenKeys.contains(key)) {
+                        seenKeys.add(key);
+                        rentInfos.add(new RentResponse.RentInfo(
+                                username,
+                                "OTP",
+                                d.getString("statusCode"),
+                                accId,
+                                d.getString("phoneNumber"),
+                                sc,
+                                d.get("cost") != null ? d.get("cost").toString() : "0",
+                                d.get("createdAt") != null ? d.get("createdAt").toString() : null,
+                                d.get("expiredAt") != null ? d.get("expiredAt").toString() : null
+                        ));
+                    }
+                }
+            }
+        }
+
+        return rentInfos;
+    }
+    private List<RentResponse.TimeSeriesItem> aggregateLineChart(PeriodRange range, TimeType timeType) {
+        Criteria c = Criteria.where("createdAt")
+                .gte(toDate(range.start))
+                .lt(toDate(range.end))
+                .and("type").is(RENT_TYPE);
+
+        Aggregation agg = newAggregation(
+                match(c),
+                project("createdAt", "statusCode")
+                        .andExpression(bucketExpr(range)).as("bucket"),
+                group("bucket", "statusCode").count().as("count"),
+                project("count").and("_id.bucket").as("timeLabel").and("_id.statusCode").as("statusCode"),
+                sort(Sort.Direction.ASC, "timeLabel")
+        );
+
+        List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
+        Map<Integer, Map<String, Long>> bucketStatusMap = rows.stream().collect(Collectors.groupingBy(
+                d -> {
+                    Object label = d.get("timeLabel");
+                    return label instanceof Number ? ((Number) label).intValue() : 0;
+                },
+                Collectors.toMap(
+                        d -> d.getString("statusCode"),
+                        d -> {
+                            Object count = d.get("count");
+                            return count instanceof Number ? ((Number) count).longValue() : 0L;
+                        },
+                        (v1, v2) -> v1,
+                        HashMap::new
+                )
+        ));
+
+        List<RentResponse.TimeSeriesItem> lineChartData = new ArrayList<>();
+
+        if (timeType == TimeType.DAY) {
+            List<LocalDate> dates = range.start.toLocalDate().datesUntil(range.end.toLocalDate())
+                    .collect(Collectors.toList());
+            for (LocalDate date : dates) {
+                String label = date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(date.getDayOfMonth(), new HashMap<>());
+                long success = statusCounts.getOrDefault("SUCCESS", 0L);
+                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
+                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
+                lineChartData.add(new RentResponse.TimeSeriesItem(label, success, refund, total));
+            }
+        } else if (timeType == TimeType.WEEK) {
+            int weeks = (int) Math.ceil(range.end.toLocalDate().lengthOfMonth() / 7.0);
+            for (int w = 0; w < weeks; w++) {
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(w, new HashMap<>());
+                long success = statusCounts.getOrDefault("SUCCESS", 0L);
+                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
+                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
+                lineChartData.add(new RentResponse.TimeSeriesItem("W" + (w + 1), success, refund, total));
+            }
+        } else { // MONTH
+            for (int m = 1; m <= 12; m++) {
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(m, new HashMap<>());
+                long success = statusCounts.getOrDefault("SUCCESS", 0L);
+                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
+                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
+                lineChartData.add(new RentResponse.TimeSeriesItem(
+                        LocalDate.of(range.start.getYear(), m, 1)
+                                .getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH),
+                        success, refund, total
+                ));
+            }
+        }
+        return lineChartData;
+    }
     private RentResponse.RevenueMetrics aggregateRevenueMetrics(PeriodRange range) {
         Criteria c = Criteria.where("createdAt")
                 .gte(toDate(range.start))
