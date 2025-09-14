@@ -17,7 +17,7 @@
     
         @Id
         private String id;
-    
+        
         private Long accountId;
         private String firstName;
         private String lastName;

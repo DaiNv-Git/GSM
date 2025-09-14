@@ -1,5 +1,6 @@
 package com.example.gsm.services.impl;
 
+import com.example.gsm.configurations.SequenceGeneratorService;
 import com.example.gsm.dao.RegisterUserRequest;
 import com.example.gsm.entity.UserAccount;
 import com.example.gsm.entity.UserAccount.WebInfo;
@@ -20,6 +21,7 @@ public class UserAccountService {
 
     private final UserAccountRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final SequenceGeneratorService sequenceGeneratorService;
 
 
     public UserAccount register(RegisterUserRequest req) {
@@ -30,8 +32,10 @@ public class UserAccountService {
         WebInfo webInfo = new WebInfo();
         webInfo.setUsername(req.getUsername());
         webInfo.setPassword(passwordEncoder.encode(req.getPassword()));
+        long accountId = sequenceGeneratorService.getNextSequence("user_accountId");
 
         UserAccount ua = UserAccount.builder()
+                .accountId(accountId)
                 .firstName(req.getFirstName())
                 .lastName(req.getLastName())
                 .isActive(true)
