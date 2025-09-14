@@ -74,13 +74,18 @@ public class RentServiceImpl implements RentService {
                 .and("type").is(RENT_TYPE);
 
         if (req.getAccountID() != null && !req.getAccountID().isEmpty()) {
-            List<String> accFilter = Collections.singletonList(req.getAccountID());
-            c = c.and("accountId").in(accFilter);
+            try {
+                // accountId trong DB là Number => parse sang long
+                long accId = Long.parseLong(req.getAccountID());
+                c = c.and("accountId").is(accId);
+            } catch (NumberFormatException e) {
+                // fallback: so sánh string (trường hợp dữ liệu lẫn string)
+                c = c.and("accountId").is(req.getAccountID());
+            }
         }
-
         if (req.getCountryCode() != null && !req.getCountryCode().isEmpty()) {
             // support cả string lẫn array
-            c = c.and("stock.countryCode").in(req.getCountryCode());
+            c = c.and("countryCode").in(req.getCountryCode());
         }
 
         return c;

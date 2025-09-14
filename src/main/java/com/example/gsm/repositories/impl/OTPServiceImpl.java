@@ -190,7 +190,18 @@ public class OTPServiceImpl implements OTPService {
 
         List<OtpDetailsResponse> items = new ArrayList<>();
         for (Document d : rows) {
-            String serviceName = d.getString("serviceName");
+            Object rawService = d.get("serviceName");
+            String serviceName;
+
+            if (rawService instanceof String) {
+                serviceName = (String) rawService;
+            } else if (rawService instanceof List) {
+                // lấy phần tử đầu tiên trong list hoặc join các giá trị
+                List<?> list = (List<?>) rawService;
+                serviceName = list.isEmpty() ? "OTHER" : String.valueOf(list.get(0));
+            } else {
+                serviceName = "OTHER";
+            }
             long operations = d.get("operations") == null ? 0L : ((Number) d.get("operations")).longValue();
             long successCount = d.get("successCount") == null ? 0L : ((Number) d.get("successCount")).longValue();
             long refundCount = d.get("refundCount") == null ? 0L : ((Number) d.get("refundCount")).longValue();
