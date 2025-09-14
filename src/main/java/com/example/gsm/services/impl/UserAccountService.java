@@ -32,10 +32,10 @@ public class UserAccountService {
         WebInfo webInfo = new WebInfo();
         webInfo.setUsername(req.getUsername());
         webInfo.setPassword(passwordEncoder.encode(req.getPassword()));
-        long accountId = sequenceGeneratorService.getNextSequence("user_accountId");
+        String accountId = sequenceGeneratorService.getNextSequence("user_accountId");
 
         UserAccount ua = UserAccount.builder()
-                .accountId(accountId)
+                .accountId(Long.valueOf(accountId))
                 .firstName(req.getFirstName())
                 .lastName(req.getLastName())
                 .isActive(true)

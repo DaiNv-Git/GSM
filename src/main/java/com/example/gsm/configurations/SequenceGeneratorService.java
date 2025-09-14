@@ -16,13 +16,17 @@ public class SequenceGeneratorService {
     @Autowired
     private MongoOperations mongoOperations;
 
-    public long getNextSequence(String seqName) {
+    public String getNextSequence(String seqName) {
         Query query = new Query(Criteria.where("_id").is(seqName));
         Update update = new Update().inc("seq", 1);
         FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true).upsert(true);
         Counter counter = mongoOperations.findAndModify(query, update, options, Counter.class);
-        return counter.getSeq();
+
+        long nextVal = counter.getSeq();
+        // Format thành 12 chữ số có 0 ở đầu
+        return String.format("%012d", nextVal);
     }
+
 
     @Data
     public static class Counter {
