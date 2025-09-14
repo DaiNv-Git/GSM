@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -95,18 +96,19 @@ public RentSimResponse rentSim(Long accountId, String serviceCode, String countr
             .map(ServiceEntity::getText)
             .orElse("Không rõ dịch vụ");
 
-    String countryName = countryRepository.findByCountryCode(countryCode)
-            .map(Country::getCountryName)
-            .orElse("Không rõ quốc gia");
+    Country foundCountry = countryRepository.findByCountryCode(countryCode)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy countryCode: " + countryCode));
 
     return new RentSimResponse(
             order.getId(),
             selectedSim.getPhoneNumber(),
             serviceCode,
             serviceName,
-            countryName,
-            rentDuration
+            foundCountry.getCountryName(),
+            rentDuration,
+            foundCountry.getCountryCode()
     );
+
 }
 
 }

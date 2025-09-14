@@ -12,5 +12,6 @@ public class RentSimResponse {
     private String serviceName;
     private String countryName;
     private int rentDuration;
+    private String countryCode;
 
 }
