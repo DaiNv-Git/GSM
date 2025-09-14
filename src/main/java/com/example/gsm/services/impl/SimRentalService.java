@@ -35,7 +35,7 @@ public RentSimResponse rentSim(Long accountId, String serviceCode, String countr
 
     Sim selectedSim = null;
     for (Sim sim : sims) {
-        boolean rented = simHistoryRepository.existsByPhoneNumberAndStatus(sim.getPhoneNumber(), "active");
+        boolean rented = simHistoryRepository.existsByPhoneNumberAndExpiredAtAfter(sim.getPhoneNumber(), new Date());
         if (!rented) {
             selectedSim = sim;
             break;
@@ -100,6 +100,7 @@ public RentSimResponse rentSim(Long accountId, String serviceCode, String countr
             .orElse("Không rõ quốc gia");
 
     return new RentSimResponse(
+            order.getId(),
             selectedSim.getPhoneNumber(),
             serviceCode,
             serviceName,

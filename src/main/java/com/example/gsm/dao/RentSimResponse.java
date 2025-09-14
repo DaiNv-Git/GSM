@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class RentSimResponse {
+    private String orderNumber;
     private String phoneNumber;
     private String serviceCode;
     private String serviceName;
