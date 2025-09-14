@@ -3,8 +3,10 @@ package com.example.gsm.services.impl;
 import com.example.gsm.dao.CountryPriceDTO;
 import com.example.gsm.entity.Country;
 import com.example.gsm.entity.ServiceCountryPrice;
+import com.example.gsm.entity.Sim;
 import com.example.gsm.entity.repository.ServiceCountryPriceRepository;
 import com.example.gsm.entity.repository.CountryRepository;
+import com.example.gsm.entity.repository.SimRepository;
 import com.example.gsm.services.CountryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,15 +14,34 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CountryServiceImpl implements CountryService {
     private final CountryRepository countryRepository;
     private final ServiceCountryPriceRepository priceRepository;
+    private final SimRepository simRepository;
 
     public List<Country> getAllCountries() {
         return countryRepository.findAll();
+    }
+
+    @Override
+    public List<Country> getAllHaveSim() {
+            List<Sim> allSims = simRepository.findAll();
+            Set<String> countryCodes = allSims.stream()
+                    .map(Sim::getCountryCode)
+                    .filter(code -> code != null && !code.isEmpty())
+                    .collect(Collectors.toSet());
+
+            // Lấy danh sách Country theo countryCodes
+            List<Country> countries = countryRepository.findAll().stream()
+                    .filter(c -> countryCodes.contains(c.getCountryCode()))
+                    .collect(Collectors.toList());
+
+            return countries;
     }
 
     public List<CountryPriceDTO> getAllCountriesByServiceCode(String serviceCode, String name) {

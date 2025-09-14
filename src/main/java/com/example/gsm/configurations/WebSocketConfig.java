@@ -12,17 +12,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // endpoint cho client connect ws://14.225.205.10:8081/ws-endpoint
         registry.addEndpoint("/ws-endpoint")
-                .setAllowedOriginPatterns("*") // cho phép mọi origin
+                .setAllowedOriginPatterns("*") 
                 .withSockJS();
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // client subscribe các topic này
         registry.enableSimpleBroker("/topic");
-        // client gửi lên server phải prefix bằng /app
         registry.setApplicationDestinationPrefixes("/app");
     }
 }

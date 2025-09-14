@@ -2,7 +2,6 @@ package com.example.gsm.controller;
 
 import com.example.gsm.dao.RentSimRequest;
 import com.example.gsm.dao.RentSimResponse;
-import com.example.gsm.dao.StatusCode;
 import com.example.gsm.entity.Order;
 import com.example.gsm.entity.UserAccount;
 import com.example.gsm.entity.repository.UserAccountRepository;
@@ -22,7 +21,7 @@ public class OTPRentalController {
 
     private final SimRentalService simRentalService;
     private final UserAccountRepository userAccountRepository;
-    @PostMapping("")
+        @PostMapping("")
     public ResponseEntity<RentSimResponse> rentSim(@RequestBody RentSimRequest req,
                                                    Authentication authentication) {
         String username = (String) authentication.getPrincipal();
