@@ -6,13 +6,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Document(collection = "orders")
 public class Order {
 
     @Id
-    private String id;
+    private String id = UUID.randomUUID().toString();;
 
     private String type;
     private Double cost;

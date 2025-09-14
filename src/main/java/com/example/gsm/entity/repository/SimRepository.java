@@ -1,7 +1,6 @@
 package com.example.gsm.entity.repository;
 
 import com.example.gsm.entity.Sim;
-import com.example.gsm.entity.SimHistory;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
