@@ -12,4 +12,5 @@ public interface CountryService {
     List<Country> getAllHaveSim();
     List<CountryPriceDTO> getAllCountriesByServiceCode(String serviceCode,String name);
     Optional<ServiceCountryPrice> getPriceByServiceAndCountry(String serviceCode, String countryCode);
+    List<CountryPriceDTO> getAllServicesByCountryCode(String countryCode);
 }

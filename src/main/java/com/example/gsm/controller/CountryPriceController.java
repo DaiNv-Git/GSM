@@ -34,6 +34,11 @@ public class CountryPriceController {
         return ResponseEntity.ok(countries);
     }
 
+    @GetMapping("/services/{countryCode}")
+    public ResponseEntity<List<CountryPriceDTO>> getAllServicesByCountryCode(
+            @PathVariable String countryCode) {
+        return ResponseEntity.ok(countryService.getAllServicesByCountryCode(countryCode));
+    }
 
     @GetMapping("/service-price")
     public ResponseEntity<?> getServicePrice(

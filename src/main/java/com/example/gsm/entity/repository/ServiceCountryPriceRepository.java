@@ -9,5 +9,6 @@ import java.util.Optional;
 public interface ServiceCountryPriceRepository extends MongoRepository<ServiceCountryPrice, String> {
     Optional<ServiceCountryPrice> findByServiceCodeAndCountryCode(String serviceCode, String countryCode);
     List<ServiceCountryPrice> findByServiceCode(String serviceCode);
+    List<ServiceCountryPrice> findByCountryCode(String countryCode);
 
 }

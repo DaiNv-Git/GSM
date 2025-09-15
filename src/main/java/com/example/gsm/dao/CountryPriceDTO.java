@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CountryPriceDTO {
+    private String serviceCode;
+    private String serviceName;
+    private String serviceImage;
     private String countryCode;
     private String countryName;
     private String flagImage;
