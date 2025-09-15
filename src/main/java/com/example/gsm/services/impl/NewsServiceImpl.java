@@ -1,4 +1,4 @@
-package com.example.news.service.impl;
+package com.example.gsm.services.impl;
 
 import com.example.gsm.entity.News;
 import com.example.gsm.entity.repository.NewsRepository;
