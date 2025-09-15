@@ -7,6 +7,7 @@ import com.example.gsm.entity.UserAccount;
 import com.example.gsm.entity.repository.UserAccountRepository;
 import com.example.gsm.services.impl.SimRentalService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,9 @@ public class OTPRentalController {
         @PostMapping("")
     public ResponseEntity<RentSimResponse> rentSim(@RequestBody RentSimRequest req,
                                                    Authentication authentication) {
+         if (authentication == null) {
+             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+         }
         String username = (String) authentication.getPrincipal();
 
         UserAccount user = userAccountRepository.findByWebInfoUsername(username)
@@ -51,6 +55,9 @@ public class OTPRentalController {
                                                                            @RequestParam(defaultValue = "0") int page,
                                                                            @RequestParam(defaultValue = "10") int size) {
         // Lấy accountId từ Authentication
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         String username = (String) authentication.getPrincipal();
         UserAccount user = userAccountRepository.findByWebInfoUsername(username)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));

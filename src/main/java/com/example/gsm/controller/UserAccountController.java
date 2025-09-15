@@ -1,5 +1,6 @@
 package com.example.gsm.controller;
 
+import com.example.gsm.configurations.AuthUtils;
 import com.example.gsm.dao.*;
 import com.example.gsm.entity.UserAccount;
 import com.example.gsm.entity.repository.UserAccountRepository;
@@ -32,7 +33,7 @@ public class UserAccountController {
         if (auth == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
+        
         String username = (String) auth.getPrincipal();
         UserAccount user = repo.findByWebInfoUsername(username)
                 .orElseThrow();

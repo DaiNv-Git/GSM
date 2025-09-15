@@ -48,7 +48,6 @@ public class CountryServiceImpl implements CountryService {
     }
 
     public List<CountryPriceDTO> getAllCountriesByServiceCode(String serviceCode, String name) {
-        // Lấy tất cả các bản ghi giá theo serviceCode
         List<ServiceCountryPrice> prices = priceRepository.findByServiceCode(serviceCode);
 
         // Lấy danh sách countryCode

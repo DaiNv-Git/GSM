@@ -116,10 +116,8 @@ public class SimRentalService {
     public Map<String, List<Order>> getOrdersGroupedByType(Long accountId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
-        // Lấy trực tiếp các order còn hạn từ MongoDB
         Page<Order> orderPage = orderRepository.findActiveOrders(accountId, new Date(), pageable);
 
-        // Sắp xếp theo expiredAt max và createdAt (giữ lại comparator cũ nhưng không cần filter nữa)
         Instant nowInstant = Instant.now();
 
         Comparator<Order> comparator = (o1, o2) -> {
@@ -148,7 +146,6 @@ public class SimRentalService {
                 .sorted(comparator)
                 .collect(Collectors.toList());
 
-        // Group theo type
         return sorted.stream()
                 .collect(Collectors.groupingBy(Order::getType, LinkedHashMap::new, Collectors.toList()));
     }
