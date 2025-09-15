@@ -1,7 +1,7 @@
 package com.example.gsm.controller;
 
 import com.example.gsm.dao.*;
-import com.example.gsm.repositories.SmsService;
+import com.example.gsm.repositories.CallService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class CallController {
     @Autowired
-    SmsService rentService;
+    CallService callService;
 
     @PostMapping("/overview")
     public ResponseCommon<CallResponse> getRentManager(@RequestBody CallRequest req) {
-        return rentService.get(req);
+        return callService.getCall(req);
     }
 }

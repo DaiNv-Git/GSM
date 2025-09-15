@@ -1,7 +1,6 @@
 package com.example.gsm.repositories.impl;
 
 import com.example.gsm.dao.*;
-import com.example.gsm.entity.ServiceEntity;
 import com.example.gsm.repositories.RentService;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
@@ -17,10 +16,8 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
