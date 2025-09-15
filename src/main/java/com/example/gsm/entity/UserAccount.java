@@ -6,7 +6,8 @@
     
     import java.time.Instant;
     import java.util.List;
-    
+    import java.util.UUID;
+
     @Document(collection = "users")
     @Getter
     @Setter
@@ -16,7 +17,7 @@
     public class UserAccount {
     
         @Id
-        private String id;
+        private String id = UUID.randomUUID().toString();
         
         private Long accountId;
         private String firstName;

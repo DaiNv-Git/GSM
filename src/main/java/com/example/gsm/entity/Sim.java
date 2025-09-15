@@ -4,6 +4,8 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.UUID;
+
 /**
  * Bảng SIM chứa danh sách sim đang có trong hệ thống.
  */
@@ -15,7 +17,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Sim {
 
     @Id
-    private String id;
+    private String id = UUID.randomUUID().toString();
 
     /** Số điện thoại SIM */
     private String phoneNumber;

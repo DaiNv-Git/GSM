@@ -13,7 +13,7 @@ import java.util.UUID;
 public class Order {
 
     @Id
-    private String id = UUID.randomUUID().toString();;
+    private String id = UUID.randomUUID().toString();
 
     private String type;
     private Double cost;
