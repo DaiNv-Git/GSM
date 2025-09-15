@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -115,30 +116,27 @@ public class SimRentalService {
     public Map<String, List<Order>> getOrdersGroupedByType(Long accountId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
-        // Chỉ lấy statusCode SUCCESS
-        Page<Order> orderPage = orderRepository.findByAccountIdAndStatusCode(accountId, "SUCCESS", pageable);
+        // Lấy trực tiếp các order còn hạn từ MongoDB
+        Page<Order> orderPage = orderRepository.findActiveOrders(accountId, new Date(), pageable);
 
-        Date now = new Date();
-
-        List<Order> filteredOrders = orderPage.getContent().stream()
-                .filter(order -> order.getStock() != null && order.getStock().stream()
-                        .anyMatch(s -> s.getExpiredAt() != null && s.getExpiredAt().after(now)))
-                .collect(Collectors.toList());
+        // Sắp xếp theo expiredAt max và createdAt (giữ lại comparator cũ nhưng không cần filter nữa)
+        Instant nowInstant = Instant.now();
 
         Comparator<Order> comparator = (o1, o2) -> {
-            Date o1MaxExpired = o1.getStock().stream()
+            Instant o1MaxExpired = o1.getStock().stream()
                     .filter(s -> s.getExpiredAt() != null)
-                    .map(Order.Stock::getExpiredAt)
-                    .max(Date::compareTo)
-                    .orElse(new Date(0));
-            Date o2MaxExpired = o2.getStock().stream()
-                    .filter(s -> s.getExpiredAt() != null)
-                    .map(Order.Stock::getExpiredAt)
-                    .max(Date::compareTo)
-                    .orElse(new Date(0));
+                    .map(s -> s.getExpiredAt().toInstant())
+                    .max(Instant::compareTo)
+                    .orElse(Instant.EPOCH);
 
-            boolean o1Expired = o1MaxExpired.after(now);
-            boolean o2Expired = o2MaxExpired.after(now);
+            Instant o2MaxExpired = o2.getStock().stream()
+                    .filter(s -> s.getExpiredAt() != null)
+                    .map(s -> s.getExpiredAt().toInstant())
+                    .max(Instant::compareTo)
+                    .orElse(Instant.EPOCH);
+
+            boolean o1Expired = o1MaxExpired.isAfter(nowInstant);
+            boolean o2Expired = o2MaxExpired.isAfter(nowInstant);
 
             if (o1Expired && !o2Expired) return -1;
             if (!o1Expired && o2Expired) return 1;
@@ -146,15 +144,15 @@ public class SimRentalService {
             return o2.getCreatedAt().compareTo(o1.getCreatedAt());
         };
 
-        List<Order> sorted = filteredOrders.stream()
+        List<Order> sorted = orderPage.getContent().stream()
                 .sorted(comparator)
                 .collect(Collectors.toList());
 
         // Group theo type
-        Map<String, List<Order>> grouped = sorted.stream()
+        return sorted.stream()
                 .collect(Collectors.groupingBy(Order::getType, LinkedHashMap::new, Collectors.toList()));
+    }
 
-        return grouped;
-    }
-    
-    }
+
+
+}
