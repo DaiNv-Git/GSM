@@ -118,6 +118,7 @@
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -125,7 +126,6 @@
                 <configuration>
                     <source>17</source>
                     <target>17</target>
-                    <!-- KHÔNG dùng <release>21</release> -->
                 </configuration>
             </plugin>
 
