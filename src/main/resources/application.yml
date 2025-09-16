@@ -10,6 +10,7 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} - %level - %logger{36} - %msg%n"
 server:
   port: 8081
+  address: 0.0.0.0
 spring:
   data:
     mongodb:
