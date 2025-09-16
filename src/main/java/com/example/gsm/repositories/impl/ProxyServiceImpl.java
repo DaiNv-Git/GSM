@@ -1,7 +1,7 @@
 package com.example.gsm.repositories.impl;
 
 import com.example.gsm.dao.*;
-import com.example.gsm.repositories.CallService;
+import com.example.gsm.repositories.ProxyService;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
 import org.springframework.data.domain.Sort;
@@ -25,18 +25,17 @@ import java.util.stream.Stream;
 import static com.example.gsm.comon.Constants.*;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
-
 @Service
 @RequiredArgsConstructor
-public class CallServiceImpl implements CallService {
+public class ProxyServiceImpl implements ProxyService {
     private final MongoTemplate mongo;
 
-    private static final String CALL_TYPE = "buy.call.service";
+    private static final String PROXY_TYPE = "buy.proxy.service";
     private static final List<String> LABELS = Arrays.asList(
             "1 day", "3 days", "1 week", "3 weeks", "1 month", "3 months"
     );
     @Override
-    public ResponseCommon<CallResponse> getCall(CallRequest req) {
+    public ResponseCommon<ProxyResponse> getProxy(ProxyRequest req) {
         // Validate request
         String error = validateRequest(req);
         if (!error.isEmpty()) {
@@ -47,22 +46,22 @@ public class CallServiceImpl implements CallService {
         PeriodRange range = resolveRange(req);
 
         // 1) Revenue Metrics
-        CallResponse.RevenueMetrics revenueMetrics = aggregateRevenueMetrics(range,req);
+        ProxyResponse.RevenueMetrics revenueMetrics = aggregateRevenueMetrics(range,req);
 
         // 2) Fetch rentInfos
-        List<CallResponse.RentInfo> rentInfos = fetchRentInfos(range,req);
+        List<ProxyResponse.RentInfo> rentInfos = fetchRentInfos(range,req);
 
         // 3) Bar Chart: Success and Refund count by serviceCode
-        List<CallResponse.ChartData> successRefundChart = aggregateSuccessRefundChart(range,req);
+        List<ProxyResponse.ChartData> successRefundChart = aggregateSuccessRefundChart(range,req);
 
         // 4) Line Chart: Total revenue by serviceCode
-        List<CallResponse.TimeSeriesItem> lineChartData = aggregateLineChart(range, req);
+        List<ProxyResponse.TimeSeriesItem> lineChartData = aggregateLineChart(range, req);
 
         // Build response
-        CallResponse response = new CallResponse(revenueMetrics, rentInfos, successRefundChart, lineChartData);
+        ProxyResponse response = new ProxyResponse(revenueMetrics,null, rentInfos, successRefundChart, lineChartData);
         return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, response);
     }
-    private CallResponse.RevenueMetrics aggregateRevenueMetrics(PeriodRange range, CallRequest req) {
+    private ProxyResponse.RevenueMetrics aggregateRevenueMetrics(PeriodRange range, ProxyRequest req) {
         Criteria c = buildCriteria(range, req);
 
         Aggregation agg = newAggregation(
@@ -87,116 +86,9 @@ public class CallServiceImpl implements CallService {
 
         double netRevenue = round2(totalRevenue - commission);
 
-        return new CallResponse.RevenueMetrics(totalRevenue, netRevenue, commission);
+        return new ProxyResponse.RevenueMetrics(totalRevenue, netRevenue, commission);
     }
-
-    private List<CallResponse.ChartData> aggregateSuccessRefundChart(PeriodRange range, CallRequest req) {
-        Criteria c = buildCriteria(range, req);
-
-        Aggregation agg = newAggregation(
-                match(c),
-                project("statusCode", "isRefund", "isActive")
-                        .and("stock.serviceCode").as("serviceCode"),
-                group("serviceCode")
-                        .sum(ConditionalOperators.when(Criteria.where("statusCode").is("SUCCESS")).then(1).otherwise(0)).as("successCount")
-                        .sum(ConditionalOperators.when(Criteria.where("isRefund").is(true)).then(1).otherwise(0)).as("refundCount")
-                        .sum(ConditionalOperators.when(Criteria.where("isActive").is(false)).then(1).otherwise(0)).as("bannedCount"),
-                project("successCount", "refundCount", "bannedCount")
-                        .and("_id").as("serviceCode"),
-                sort(Sort.Direction.DESC, "successCount")
-        );
-
-        List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
-
-        List<CallResponse.ChartData> result = new ArrayList<>();
-
-        for (Document d : rows) {
-            Object serviceCodeObj = d.get("serviceCode");
-            double successCount = d.get("successCount") != null ? ((Number) d.get("successCount")).doubleValue() : 0L;
-            double refundCount = d.get("refundCount") != null ? ((Number) d.get("refundCount")).doubleValue() : 0L;
-            double bannedCount = d.get("bannedCount") != null ? ((Number) d.get("bannedCount")).doubleValue() : 0L;
-
-            if (serviceCodeObj instanceof List) {
-                List<?> list = (List<?>) serviceCodeObj;
-                for (Object item : list) {
-                    String code = item != null ? item.toString() : "OTHER";
-                    result.add(new CallResponse.ChartData(code, successCount, refundCount, bannedCount));
-                }
-            } else {
-                String code = serviceCodeObj != null ? serviceCodeObj.toString() : "OTHER";
-                result.add(new CallResponse.ChartData(code, successCount, refundCount, bannedCount));
-            }
-        }
-
-        return result;
-    }
-
-    private List<CallResponse.TimeSeriesItem> aggregateLineChart(PeriodRange range, CallRequest req) {
-        Criteria c = buildCriteria(range, req);
-
-        Aggregation agg = newAggregation(
-                match(c),
-                project("createdAt", "statusCode")
-                        .andExpression(bucketExpr(range)).as("bucket"),
-                group("bucket", "statusCode").count().as("count"),
-                project("count").and("_id.bucket").as("timeLabel").and("_id.statusCode").as("statusCode"),
-                sort(Sort.Direction.ASC, "timeLabel")
-        );
-
-        List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
-        Map<Integer, Map<String, Long>> bucketStatusMap = rows.stream().collect(Collectors.groupingBy(
-                d -> {
-                    Object label = d.get("timeLabel");
-                    return label instanceof Number ? ((Number) label).intValue() : 0;
-                },
-                Collectors.toMap(
-                        d -> d.getString("statusCode"),
-                        d -> {
-                            Object count = d.get("count");
-                            return count instanceof Number ? ((Number) count).longValue() : 0L;
-                        },
-                        (v1, v2) -> v1,
-                        HashMap::new
-                )
-        ));
-
-        List<CallResponse.TimeSeriesItem> lineChartData = new ArrayList<>();
-
-        if (req.getTimeType() == TimeType.WEEK) {
-            // 7 ngày trong tuần
-            for (int d = 1; d <= 7; d++) {
-                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(d, new HashMap<>());
-                long success = statusCounts.getOrDefault("SUCCESS", 0L);
-                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
-                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
-                lineChartData.add(new CallResponse.TimeSeriesItem("D" + d, success, refund, total));
-            }
-        } else if (req.getTimeType() == TimeType.MONTH) {
-            // 4 tuần trong tháng
-            for (int w = 1; w <= 4; w++) {
-                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(w, new HashMap<>());
-                long success = statusCounts.getOrDefault("SUCCESS", 0L);
-                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
-                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
-                lineChartData.add(new CallResponse.TimeSeriesItem("W" + w, success, refund, total));
-            }
-        } else if (req.getTimeType() == TimeType.YEAR) {
-            // 12 tháng trong năm
-            for (int m = 1; m <= 12; m++) {
-                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(m, new HashMap<>());
-                long success = statusCounts.getOrDefault("SUCCESS", 0L);
-                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
-                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
-                lineChartData.add(new CallResponse.TimeSeriesItem(
-                        LocalDate.of(range.start.getYear(), m, 1)
-                                .getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH),
-                        success, refund, total
-                ));
-            }
-        }
-        return lineChartData;
-    }
-    private List<CallResponse.RentInfo> fetchRentInfos(PeriodRange range, CallRequest req) {
+    private List<ProxyResponse.RentInfo> fetchRentInfos(PeriodRange range, ProxyRequest req) {
         Criteria c = buildCriteria(range, req);
 
         Aggregation agg = newAggregation(
@@ -211,12 +103,12 @@ public class CallServiceImpl implements CallService {
         if (orders.isEmpty()) return Collections.emptyList();
 
         // ✅ 1. Lấy danh sách accountId từ orders (string hoặc list)
-        Set<String> accountIds = orders.stream()
+        Set<Object> accountIds = orders.stream()
                 .map(d -> d.get("accountId"))
                 .filter(Objects::nonNull)
                 .flatMap(acc -> {
-                    if (acc instanceof List) return ((List<?>) acc).stream().map(Object::toString);
-                    else return Stream.of(acc.toString());
+                    if (acc instanceof List) return ((List<?>) acc).stream();
+                    else return Stream.of(acc);
                 })
                 .collect(Collectors.toSet());
 
@@ -248,7 +140,7 @@ public class CallServiceImpl implements CallService {
         }
 
         // ✅ 4. Join orders với users để build RentInfo
-        List<CallResponse.RentInfo> rentInfos = new ArrayList<>();
+        List<ProxyResponse.RentInfo> rentInfos = new ArrayList<>();
         Set<String> seenKeys = new HashSet<>();
 
         for (Document d : orders) {
@@ -288,7 +180,7 @@ public class CallServiceImpl implements CallService {
                         String key = accId + "|" + sc + "|" + pn; // thêm phoneNumber vào key để tránh duplicate
                         if (!seenKeys.contains(key)) {
                             seenKeys.add(key);
-                            rentInfos.add(new CallResponse.RentInfo(
+                            rentInfos.add(new ProxyResponse.RentInfo(
                                     username,
                                     "OTP",
                                     d.getString("statusCode"),
@@ -307,8 +199,182 @@ public class CallServiceImpl implements CallService {
 
         return rentInfos;
     }
+    private List<ProxyResponse.ChartData> aggregateSuccessRefundChart(PeriodRange range, ProxyRequest req) {
+        Criteria c = buildCriteria(range, req);
 
+        Aggregation agg = newAggregation(
+                match(c),
+                project("statusCode", "isRefund", "isActive")
+                        .and("stock.serviceCode").as("serviceCode"),
+                group("serviceCode")
+                        .sum(ConditionalOperators.when(Criteria.where("statusCode").is("SUCCESS")).then(1).otherwise(0)).as("successCount")
+                        .sum(ConditionalOperators.when(Criteria.where("isRefund").is(true)).then(1).otherwise(0)).as("refundCount")
+                        .sum(ConditionalOperators.when(Criteria.where("isActive").is(false)).then(1).otherwise(0)).as("bannedCount"),
+                project("successCount", "refundCount", "bannedCount")
+                        .and("_id").as("serviceCode"),
+                sort(Sort.Direction.DESC, "successCount")
+        );
 
+        List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
+
+        List<ProxyResponse.ChartData> result = new ArrayList<>();
+
+        for (Document d : rows) {
+            Object serviceCodeObj = d.get("serviceCode");
+            double successCount = d.get("successCount") != null ? ((Number) d.get("successCount")).doubleValue() : 0L;
+            double refundCount = d.get("refundCount") != null ? ((Number) d.get("refundCount")).doubleValue() : 0L;
+            double bannedCount = d.get("bannedCount") != null ? ((Number) d.get("bannedCount")).doubleValue() : 0L;
+
+            if (serviceCodeObj instanceof List) {
+                List<?> list = (List<?>) serviceCodeObj;
+                for (Object item : list) {
+                    String code = item != null ? item.toString() : "OTHER";
+                    result.add(new ProxyResponse.ChartData(code, successCount, refundCount, bannedCount));
+                }
+            } else {
+                String code = serviceCodeObj != null ? serviceCodeObj.toString() : "OTHER";
+                result.add(new ProxyResponse.ChartData(code, successCount, refundCount, bannedCount));
+            }
+        }
+
+        return result;
+    }
+    private List<ProxyResponse.TimeSeriesItem> aggregateLineChart(PeriodRange range, ProxyRequest req) {
+        Criteria c = buildCriteria(range, req);
+
+        Aggregation agg = newAggregation(
+                match(c),
+                project("createdAt", "statusCode")
+                        .andExpression(bucketExpr(range)).as("bucket"),
+                group("bucket", "statusCode").count().as("count"),
+                project("count").and("_id.bucket").as("timeLabel").and("_id.statusCode").as("statusCode"),
+                sort(Sort.Direction.ASC, "timeLabel")
+        );
+
+        List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
+        Map<Integer, Map<String, Long>> bucketStatusMap = rows.stream().collect(Collectors.groupingBy(
+                d -> {
+                    Object label = d.get("timeLabel");
+                    return label instanceof Number ? ((Number) label).intValue() : 0;
+                },
+                Collectors.toMap(
+                        d -> d.getString("statusCode"),
+                        d -> {
+                            Object count = d.get("count");
+                            return count instanceof Number ? ((Number) count).longValue() : 0L;
+                        },
+                        (v1, v2) -> v1,
+                        HashMap::new
+                )
+        ));
+
+        List<ProxyResponse.TimeSeriesItem> lineChartData = new ArrayList<>();
+
+        if (req.getTimeType() == TimeType.WEEK) {
+            // 7 ngày trong tuần
+            for (int d = 1; d <= 7; d++) {
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(d, new HashMap<>());
+                long success = statusCounts.getOrDefault("SUCCESS", 0L);
+                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
+                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
+                lineChartData.add(new ProxyResponse.TimeSeriesItem("D" + d, success, refund, total));
+            }
+        } else if (req.getTimeType() == TimeType.MONTH) {
+            // 4 tuần trong tháng
+            for (int w = 1; w <= 4; w++) {
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(w, new HashMap<>());
+                long success = statusCounts.getOrDefault("SUCCESS", 0L);
+                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
+                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
+                lineChartData.add(new ProxyResponse.TimeSeriesItem("W" + w, success, refund, total));
+            }
+        } else if (req.getTimeType() == TimeType.YEAR) {
+            // 12 tháng trong năm
+            for (int m = 1; m <= 12; m++) {
+                Map<String, Long> statusCounts = bucketStatusMap.getOrDefault(m, new HashMap<>());
+                long success = statusCounts.getOrDefault("SUCCESS", 0L);
+                long refund = statusCounts.getOrDefault("REFUNDED", 0L);
+                long total = success + refund + statusCounts.getOrDefault("FAIL", 0L);
+                lineChartData.add(new ProxyResponse.TimeSeriesItem(
+                        LocalDate.of(range.start.getYear(), m, 1)
+                                .getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH),
+                        success, refund, total
+                ));
+            }
+        }
+        return lineChartData;
+    }
+    private Criteria buildCriteria(PeriodRange range, ProxyRequest req) {
+        Criteria c = Criteria.where("createdAt")
+                .gte(toDate(range.start))
+                .lt(toDate(range.end))
+                .and("type").is(PROXY_TYPE);
+
+        if (req.getAccountID() != null && !req.getAccountID().isEmpty()) {
+            try {
+                // accountId trong DB là Number => parse sang long
+                long accId = Long.parseLong(req.getAccountID());
+                c = c.and("accountId").is(accId);
+            } catch (NumberFormatException e) {
+                // fallback: so sánh string (trường hợp dữ liệu lẫn string)
+                c = c.and("accountId").is(req.getAccountID());
+            }
+        }
+        if (req.getCountryCode() != null && !req.getCountryCode().isEmpty()) {
+            // support cả string lẫn array
+            c = c.and("countryCode").in(req.getCountryCode());
+        }
+
+        return c;
+    }
+    private static Date toDate(LocalDateTime ldt) {
+        return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
+    }
+
+    private String bucketExpr(PeriodRange range) {
+        if (range.timeType == TimeType.WEEK) {
+            // Bucket theo ngày (1..7)
+            return "dayOfWeek(createdAt)";
+        }
+        if (range.timeType == TimeType.MONTH) {
+            // Bucket theo tuần trong tháng (1..4), mỗi tuần = 7 ngày
+            return "ceil(dayOfMonth(createdAt) / 7)";
+        }
+        if (range.timeType == TimeType.YEAR) {
+            // Bucket theo tháng trong năm (1..12)
+            return "month(createdAt)";
+        }
+        throw new IllegalArgumentException("Unsupported timeType: " + range.timeType);
+    }
+    private static double round2(double v) {
+        return Math.round(v * 100.0) / 100.0;
+    }
+    private String validateRequest(ProxyRequest req) {
+        if (req.getTimeType() == null) return "timeType is required";
+        if (req.getYear() == null) return "year is required";
+
+        if (req.getTimeType() == TimeType.MONTH &&
+                (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
+            return "month is required for MONTH and must be 1..12";
+        }
+
+        if (req.getTimeType() == TimeType.WEEK) {
+            if (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12) {
+                return "month is required for WEEK and must be 1..12";
+            }
+        }
+        return "";
+    }
+    private static class PeriodRange {
+        final LocalDateTime start, end;
+        final TimeType timeType;
+
+        PeriodRange(LocalDateTime s, LocalDateTime e, TimeType t) {
+            this.start = s;
+            this.end = e;
+            this.timeType = t;
+        }
+    }
     private String extractString(Object obj) {
         if (obj == null) return null;
 
@@ -330,70 +396,8 @@ public class CallServiceImpl implements CallService {
         String s = obj.toString().trim();
         return s.isEmpty() ? null : s;
     }
-    private Criteria buildCriteria(PeriodRange range, CallRequest req) {
-        Criteria c = Criteria.where("createdAt")
-                .gte(toDate(range.start))
-                .lt(toDate(range.end))
-                .and("type").is(CALL_TYPE);
-        if (req.getCountryCode() != null && !req.getCountryCode().isEmpty()) {
-            // support cả string lẫn array
-            c = c.and("countryCode").in(req.getCountryCode());
-        }
 
-        return c;
-    }
-    private String validateRequest(CallRequest req) {
-        if (req.getTimeType() == null) return "timeType is required";
-        if (req.getYear() == null) return "year is required";
-
-        if (req.getTimeType() == TimeType.MONTH &&
-                (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12)) {
-            return "month is required for MONTH and must be 1..12";
-        }
-
-        if (req.getTimeType() == TimeType.WEEK) {
-            if (req.getMonth() == null || req.getMonth() < 1 || req.getMonth() > 12) {
-                return "month is required for WEEK and must be 1..12";
-            }
-        }
-        return "";
-    }
-    private String bucketExpr(PeriodRange range) {
-        if (range.timeType == TimeType.WEEK) {
-            // Bucket theo ngày (1..7)
-            return "dayOfWeek(createdAt)";
-        }
-        if (range.timeType == TimeType.MONTH) {
-            // Bucket theo tuần trong tháng (1..4), mỗi tuần = 7 ngày
-            return "ceil(dayOfMonth(createdAt) / 7)";
-        }
-        if (range.timeType == TimeType.YEAR) {
-            // Bucket theo tháng trong năm (1..12)
-            return "month(createdAt)";
-        }
-        throw new IllegalArgumentException("Unsupported timeType: " + range.timeType);
-    }
-
-    private static Date toDate(LocalDateTime ldt) {
-        return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
-    }
-
-    private static double round2(double v) {
-        return Math.round(v * 100.0) / 100.0;
-    }
-
-    private static class PeriodRange {
-        final LocalDateTime start, end;
-        final TimeType timeType;
-
-        PeriodRange(LocalDateTime s, LocalDateTime e, TimeType t) {
-            this.start = s;
-            this.end = e;
-            this.timeType = t;
-        }
-    }
-
-    private PeriodRange resolveRange(CallRequest req) {
+    private PeriodRange resolveRange(ProxyRequest req) {
         TimeType type = req.getTimeType();
         int year = req.getYear();
 

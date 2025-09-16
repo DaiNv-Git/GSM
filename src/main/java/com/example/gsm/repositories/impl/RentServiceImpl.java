@@ -134,7 +134,6 @@ public class RentServiceImpl implements RentService {
         List<RentResponse.ChartData> successRefundChart = aggregateSuccessRefundChart(range,req);
 
         // 4) Line Chart: Total revenue by serviceCode
-//        List<RentResponse.RevenueData> revenueChart = aggregateRevenueChart(range);
         List<RentResponse.TimeSeriesItem> lineChartData = aggregateLineChart(range, req);
 
         // Build response
@@ -202,7 +201,6 @@ public class RentServiceImpl implements RentService {
         }
         return "";
     }
-
     private List<RentResponse.RentInfo> fetchRentInfos(PeriodRange range, RentRequest req) {
         Criteria c = buildCriteria(range, req);
 
@@ -217,28 +215,31 @@ public class RentServiceImpl implements RentService {
         List<Document> orders = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
         if (orders.isEmpty()) return Collections.emptyList();
 
-        // Lấy danh sách accountId kiểu String
-        Set<String> accountIds = orders.stream()
+        // ✅ 1. Lấy danh sách accountId từ orders (string hoặc list)
+        Set<Object> accountIds = orders.stream()
                 .map(d -> d.get("accountId"))
                 .filter(Objects::nonNull)
                 .flatMap(acc -> {
-                    if (acc instanceof List) return ((List<?>) acc).stream().map(Object::toString);
-                    else return Stream.of(acc.toString());
+                    if (acc instanceof List) return ((List<?>) acc).stream();
+                    else return Stream.of(acc);
                 })
                 .collect(Collectors.toSet());
 
-        // Lấy username từ users collection
-        List<Document> userDocsRaw = mongo.findAll(Document.class, "users");
-        Map<String, String> accountIdToUsername = new HashMap<>();
+        // ✅ 2. Query users chỉ theo accountId liên quan
+        Criteria userCriteria = Criteria.where("accountId").in(accountIds);
+        Query userQuery = new Query(userCriteria);
+        userQuery.fields().include("accountId").include("firstName").include("lastName");
 
-        for (Document u : userDocsRaw) {
+        List<Document> userDocs = mongo.find(userQuery, Document.class, "users");
+
+        // ✅ 3. Map accountId -> username
+        Map<String, String> accountIdToUsername = new HashMap<>();
+        for (Document u : userDocs) {
             Object accObj = u.get("accountId");
             List<String> accIdList = new ArrayList<>();
             if (accObj instanceof List) {
-                ((List<?>) accObj).forEach(a -> {
-                    if (a != null && accountIds.contains(a.toString())) accIdList.add(a.toString());
-                });
-            } else if (accObj != null && accountIds.contains(accObj.toString())) {
+                ((List<?>) accObj).forEach(a -> { if (a != null) accIdList.add(a.toString()); });
+            } else if (accObj != null) {
                 accIdList.add(accObj.toString());
             }
 
@@ -251,51 +252,59 @@ public class RentServiceImpl implements RentService {
             }
         }
 
-        // Map orders -> RentInfo, tránh duplicate cùng serviceCode và accountId
+        // ✅ 4. Join orders với users để build RentInfo
         List<RentResponse.RentInfo> rentInfos = new ArrayList<>();
         Set<String> seenKeys = new HashSet<>();
 
         for (Document d : orders) {
-            Object accObj = d.get("accountId");
+            // accountId có thể là string hoặc list
             List<String> accIdList = new ArrayList<>();
+            Object accObj = d.get("accountId");
             if (accObj instanceof List) {
-                ((List<?>) accObj).forEach(a -> {
-                    if (a != null) accIdList.add(a.toString());
-                });
+                ((List<?>) accObj).forEach(a -> { if (a != null) accIdList.add(a.toString()); });
             } else if (accObj != null) {
                 accIdList.add(accObj.toString());
             }
 
-            Object serviceCodeObj = d.get("serviceCode");
+            // serviceCode cũng có thể là string hoặc list
             List<String> serviceCodes = new ArrayList<>();
-            if (serviceCodeObj instanceof List) {
-                ((List<?>) serviceCodeObj).forEach(sc -> {
-                    if (sc != null) serviceCodes.add(sc.toString());
-                });
-            } else if (serviceCodeObj != null) {
-                serviceCodes.add(serviceCodeObj.toString());
+            Object scObj = d.get("serviceCode");
+            if (scObj instanceof List) {
+                ((List<?>) scObj).forEach(sc -> { if (sc != null) serviceCodes.add(sc.toString()); });
+            } else if (scObj != null) {
+                serviceCodes.add(scObj.toString());
             } else {
                 serviceCodes.add("OTHER");
+            }
+
+            // phoneNumber cũng có thể là string hoặc list
+            List<String> phoneNumbers = new ArrayList<>();
+            Object pnObj = d.get("phoneNumber");
+            if (pnObj instanceof List) {
+                ((List<?>) pnObj).forEach(pn -> { if (pn != null) phoneNumbers.add(pn.toString()); });
+            } else if (pnObj != null) {
+                phoneNumbers.add(pnObj.toString());
             }
 
             for (String accId : accIdList) {
                 String username = accountIdToUsername.get(accId);
                 for (String sc : serviceCodes) {
-                    String key = accId + "|" + sc;
-
-                    if (!seenKeys.contains(key)) {
-                        seenKeys.add(key);
-                        rentInfos.add(new RentResponse.RentInfo(
-                                username,
-                                "OTP",
-                                d.getString("statusCode"),
-                                accId,
-                                d.getString("phoneNumber"),
-                                sc,
-                                d.get("cost") != null ? d.get("cost").toString() : "0",
-                                d.get("createdAt") != null ? d.get("createdAt").toString() : null,
-                                d.get("expiredAt") != null ? d.get("expiredAt").toString() : null
-                        ));
+                    for (String pn : phoneNumbers) {
+                        String key = accId + "|" + sc + "|" + pn; // thêm phoneNumber vào key để tránh duplicate
+                        if (!seenKeys.contains(key)) {
+                            seenKeys.add(key);
+                            rentInfos.add(new RentResponse.RentInfo(
+                                    username,
+                                    "OTP",
+                                    d.getString("statusCode"),
+                                    accId, //account
+                                    pn,   // dùng từng phoneNumber trong list
+                                    sc, // dùng từng service trong list
+                                    d.get("cost") != null ? d.get("cost").toString() : "0",
+                                    d.get("createdAt") != null ? d.get("createdAt").toString() : null,
+                                    d.get("expiredAt") != null ? d.get("expiredAt").toString() : null
+                            ));
+                        }
                     }
                 }
             }
@@ -498,32 +507,6 @@ public class RentServiceImpl implements RentService {
 
         return result;
     }
-
-//    private List<RentResponse.RevenueData> aggregateRevenueChart(PeriodRange range) {
-//        Criteria c = Criteria.where("createdAt")
-//                .gte(toDate(range.start))
-//                .lt(toDate(range.end))
-//                .and("type").is(RENT_TYPE);
-//
-//        Aggregation agg = newAggregation(
-//                match(c),
-//                project("cost")
-//                        .and("stock.serviceCode").as("label"),
-//                group("label")
-//                        .sum("cost").as("totalRevenue"),
-//                project("totalRevenue")
-//                        .and("_id").as("label"),
-//                sort(Sort.Direction.DESC, "totalRevenue")
-//        );
-//
-//        List<Document> rows = mongo.aggregate(agg, "orders", Document.class).getMappedResults();
-//        return rows.stream()
-//                .map(d -> new RentResponse.RevenueData(
-//                        d.getString("label") != null ? d.getString("label") : "OTHER",
-//                        round2(d.get("totalRevenue") != null ? ((Number) d.get("totalRevenue")).doubleValue() : 0.0)
-//                ))
-//                .collect(Collectors.toList());
-//    }
 
     private String bucketExpr(PeriodRange range) {
         if (range.timeType == TimeType.WEEK) {
