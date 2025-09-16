@@ -126,6 +126,8 @@
                     <!-- Nếu bạn muốn biên dịch chuẩn Java 17 -->
                     <source>17</source>
                     <target>17</target>
+                    <release>21</release>
+
                     <!-- hoặc bạn có thể dùng <release>17</release> -->
                 </configuration>
             </plugin>
