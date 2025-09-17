@@ -103,7 +103,7 @@ public class SimServiceImpl implements SimService {
             Sim exist = existingByPhone.get(key);
 
             if (exist == null) {
-                incoming.setStatus("new");
+                incoming.setStatus("active");
                 toInsert.add(incoming);
             } else {
                 Document filter = new Document("phoneNumber", incoming.getPhoneNumber())
