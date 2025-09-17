@@ -173,7 +173,7 @@ public class SimRentalService {
         Map<String, Object> wsMessage = new HashMap<>();
         wsMessage.put("deviceName", selectedSim.getDeviceName());
         wsMessage.put("phoneNumber", selectedSim.getPhoneNumber());
-        wsMessage.put("comNumber", selectedSim.getPhoneNumber());             // hoặc provider
+        wsMessage.put("comNumber", selectedSim.getComName());             // hoặc provider
         wsMessage.put("customerId", accountId);
         wsMessage.put("serviceCode", String.join(",", services));
         wsMessage.put("waitingTime", rentDuration);
