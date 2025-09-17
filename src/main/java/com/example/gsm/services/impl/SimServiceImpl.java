@@ -52,10 +52,11 @@ public class SimServiceImpl implements SimService {
         // 4. Bulk insert và update
         bulkInsertAndUpdate(insertUpdate);
 
+        // 5. Đánh dấu sim không còn trong request
         markReplacedSims(phonesInRequest);
     }
 
-    // Parse JSON thành danh sách Sim + danh sách phone numbers
+    // Parse JSON thành danh sách Sim + danh sách phoneDeviceKey
     private Pair<List<Sim>, Set<String>> parseIncomingSims(String json) throws Exception {
         JsonNode root = objectMapper.readTree(json);
 
@@ -72,7 +73,9 @@ public class SimServiceImpl implements SimService {
             String phone = node.path("phone_number").asText("");
             if (phone.isEmpty()) continue;
 
-            phonesInRequest.add(phone);
+            // build key phone+deviceName
+            String phoneKey = buildKey(phone, deviceName);
+            phonesInRequest.add(phoneKey);
 
             incomingSims.add(Sim.builder()
                     .phoneNumber(phone)
@@ -90,8 +93,18 @@ public class SimServiceImpl implements SimService {
         return Pair.of(incomingSims, phonesInRequest);
     }
 
-    // Lấy sim hiện có thành Map
- 
+    private Map<String, Sim> getExistingSimMap() {
+        List<Sim> existingSims = simRepository.findAll();
+        return existingSims.stream()
+                .collect(Collectors.toMap(
+                        s -> buildKey(s.getPhoneNumber(), s.getDeviceName()),
+                        s -> s,
+                        (a, b) -> a));
+    }
+
+    private String buildKey(String phoneNumber, String deviceName) {
+        return (phoneNumber == null ? "" : phoneNumber) + "#" + (deviceName == null ? "" : deviceName);
+    }
 
     // Chuẩn bị insert và update
     private InsertUpdateResult prepareInsertAndUpdates(List<Sim> incomingSims, Map<String, Sim> existingByPhone) {
@@ -126,19 +139,6 @@ public class SimServiceImpl implements SimService {
 
         return new InsertUpdateResult(toInsert, updates);
     }
-    private Map<String, Sim> getExistingSimMap() {
-        List<Sim> existingSims = simRepository.findAll();
-        return existingSims.stream()
-                .collect(Collectors.toMap(
-                        s -> buildKey(s.getPhoneNumber(), s.getDeviceName()),
-                        s -> s,
-                        (a, b) -> a));
-    }
-
-    private String buildKey(String phoneNumber, String deviceName) {
-        return (phoneNumber == null ? "" : phoneNumber) + "#" + (deviceName == null ? "" : deviceName);
-    }
-
 
     // Bulk insert và update
     private void bulkInsertAndUpdate(InsertUpdateResult insertUpdate) {
@@ -150,14 +150,11 @@ public class SimServiceImpl implements SimService {
         }
     }
 
-    // Đánh dấu các sim không còn trong request thành replaced
+    // Đánh dấu các sim không còn trong request thành replaced (theo phone+deviceName)
     private void markReplacedSims(Set<String> phonesInRequest) {
         List<Sim> allSims = simRepository.findAll();
-        List<String> keys = allSims.stream()
-                .map(s -> buildKey(s.getPhoneNumber(), s.getDeviceName()))
-                .toList();
 
-        // Lấy danh sách sim cần replace
+        // lọc sim không có trong request
         List<Sim> simsToReplace = allSims.stream()
                 .filter(s -> !phonesInRequest.contains(buildKey(s.getPhoneNumber(), s.getDeviceName())))
                 .toList();
@@ -166,10 +163,10 @@ public class SimServiceImpl implements SimService {
             Query query = new Query(Criteria.where("phoneNumber").is(s.getPhoneNumber())
                     .and("deviceName").is(s.getDeviceName()));
             Update update = new Update().set("status", "replaced").set("lastUpdated", new Date());
-            mongoTemplate.updateMulti(query, update, Sim.class);
+            // update từng bản ghi thay vì updateMulti để tránh update toàn DB
+            mongoTemplate.updateFirst(query, update, Sim.class);
         });
     }
-
 
     // Hàm tiện ích để tránh null
     private String defaultIfNull(String value) {
