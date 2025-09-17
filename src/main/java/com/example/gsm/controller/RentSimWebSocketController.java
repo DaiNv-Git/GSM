@@ -19,6 +19,6 @@ public class RentSimWebSocketController {
         System.out.println("Nhận từ client: " + message);
 
         // Ví dụ: broadcast message nhận được tới tất cả client
-//        messagingTemplate.convertAndSend("/topic/send-otp", message);
+        messagingTemplate.convertAndSend("/topic/send-otp", message);
     }
 }
