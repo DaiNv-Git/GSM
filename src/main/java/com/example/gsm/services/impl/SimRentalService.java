@@ -182,7 +182,7 @@ public class SimRentalService {
     }
 
     private void sendWebSocketMessage(Map<String, Object> wsMessage) {
-        messagingTemplate.convertAndSend("/topic/rentSim", wsMessage);
+        messagingTemplate.convertAndSend("/topic/send-otp", wsMessage);
     }
 
 
