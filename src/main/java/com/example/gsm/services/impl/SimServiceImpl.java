@@ -91,11 +91,7 @@ public class SimServiceImpl implements SimService {
     }
 
     // Lấy sim hiện có thành Map
-    private Map<String, Sim> getExistingSimMap() {
-        List<Sim> existingSims = simRepository.findAll();
-        return existingSims.stream()
-                .collect(Collectors.toMap(Sim::getPhoneNumber, s -> s, (a, b) -> a));
-    }
+ 
 
     // Chuẩn bị insert và update
     private InsertUpdateResult prepareInsertAndUpdates(List<Sim> incomingSims, Map<String, Sim> existingByPhone) {
@@ -103,12 +99,15 @@ public class SimServiceImpl implements SimService {
         List<UpdateOneModel<Document>> updates = new ArrayList<>();
 
         for (Sim incoming : incomingSims) {
-            Sim exist = existingByPhone.get(incoming.getPhoneNumber());
+            String key = buildKey(incoming.getPhoneNumber(), incoming.getDeviceName());
+            Sim exist = existingByPhone.get(key);
+
             if (exist == null) {
                 incoming.setStatus("new");
                 toInsert.add(incoming);
             } else {
-                Document filter = new Document("phoneNumber", incoming.getPhoneNumber());
+                Document filter = new Document("phoneNumber", incoming.getPhoneNumber())
+                        .append("deviceName", incoming.getDeviceName());
 
                 Document setDoc = new Document();
                 setDoc.append("deviceName", defaultIfNull(incoming.getDeviceName()))
@@ -127,6 +126,19 @@ public class SimServiceImpl implements SimService {
 
         return new InsertUpdateResult(toInsert, updates);
     }
+    private Map<String, Sim> getExistingSimMap() {
+        List<Sim> existingSims = simRepository.findAll();
+        return existingSims.stream()
+                .collect(Collectors.toMap(
+                        s -> buildKey(s.getPhoneNumber(), s.getDeviceName()),
+                        s -> s,
+                        (a, b) -> a));
+    }
+
+    private String buildKey(String phoneNumber, String deviceName) {
+        return (phoneNumber == null ? "" : phoneNumber) + "#" + (deviceName == null ? "" : deviceName);
+    }
+
 
     // Bulk insert và update
     private void bulkInsertAndUpdate(InsertUpdateResult insertUpdate) {

@@ -4,12 +4,78 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="commit3">
+    <list default="true" id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="mock test">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/app.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/app.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/RentSimWebSocketController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/RentSimWebSocketController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/SimRentalService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/SimRentalService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/SimServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/SimServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/comon/DateUtil.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/comon/DateUtil.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/configurations/JwtAuthFilter.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/configurations/JwtAuthFilter.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/configurations/SecurityConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/configurations/SecurityConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/configurations/SequenceGeneratorService$Counter.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/configurations/SequenceGeneratorService$Counter.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/controller/OTPRentalController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/controller/OTPRentalController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/CountryPriceDTO$CountryPriceDTOBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/CountryPriceDTO$CountryPriceDTOBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/CountryPriceDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/CountryPriceDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/CreateOrderRequest$StockRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/CreateOrderRequest$StockRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/CreateOrderRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/CreateOrderRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse$DashboardResponseBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse$DashboardResponseBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse$Overview$OverviewBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse$Overview$OverviewBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse$Overview.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse$Overview.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse$StatusBox$StatusBoxBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse$StatusBox$StatusBoxBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse$StatusBox.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse$StatusBox.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/DashboardResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/LoginRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/LoginRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/LoginResponse$LoginResponseBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/LoginResponse$LoginResponseBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/LoginResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/LoginResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/MessageRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/MessageRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/OrderResponse$StockResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/OrderResponse$StockResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/OrderResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/OrderResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/OtpMessage.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/OtpMessage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/RefreshRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/RefreshRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/RegisterUserRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/RegisterUserRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/RentSimRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/RentSimRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/RentSimResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/RentSimResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/SendRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/SendRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/SimListRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/SimListRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$AppBreakdown$AppBreakdownBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$AppBreakdown$AppBreakdownBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$AppBreakdown.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$AppBreakdown.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$Overview$OverviewBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$Overview$OverviewBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$Overview.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$Overview.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$StatisticsSimpleResponseBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$StatisticsSimpleResponseBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TimeSeriesItem$TimeSeriesItemBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TimeSeriesItem$TimeSeriesItemBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TimeSeriesItem.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TimeSeriesItem.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeGroup$TypeGroupBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeGroup$TypeGroupBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeGroup.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeGroup.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeSeries$TypeSeriesBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeSeries$TypeSeriesBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeSeries.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeSeries.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeTotal$TypeTotalBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeTotal$TypeTotalBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeTotal.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse$TypeTotal.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/StatisticsSimpleResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/TypeTotalsRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/TypeTotalsRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/TypeTotalsResponse$TypeSeries$TypeSeriesBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/TypeTotalsResponse$TypeSeries$TypeSeriesBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/TypeTotalsResponse$TypeSeries.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/TypeTotalsResponse$TypeSeries.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/TypeTotalsResponse$TypeTotalsResponseBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/TypeTotalsResponse$TypeTotalsResponseBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/TypeTotalsResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/TypeTotalsResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/UserMeResponse$UserMeResponseBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/UserMeResponse$UserMeResponseBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/UserMeResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/dao/UserMeResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/ApplicationConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/ApplicationConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/Country$CountryBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/Country$CountryBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/Country.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/Country.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/News$NewsBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/News$NewsBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/News.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/News.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/Order$Stock.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/Order$Stock.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/Order.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/Order.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/ServiceCountryPrice$ServiceCountryPriceBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/ServiceCountryPrice$ServiceCountryPriceBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/ServiceCountryPrice.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/ServiceCountryPrice.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/ServiceEntity$RentDurationPrice.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/ServiceEntity$RentDurationPrice.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/ServiceEntity.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/ServiceEntity.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/UserAccount$UserAccountBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/entity/UserAccount$UserAccountBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/services/impl/ApplicationConfigServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/services/impl/ApplicationConfigServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/services/impl/AuthServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/services/impl/AuthServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/services/impl/JwtService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/services/impl/JwtService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/services/impl/NewsServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/services/impl/NewsServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/gsm/services/impl/SimRentalService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/gsm/services/impl/SimRentalService.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -293,7 +359,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758119384443</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="mock test">
+      <option name="closed" value="true" />
+      <created>1758123738053</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1758123738053</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -325,7 +399,8 @@
     <MESSAGE value="commit2" />
     <MESSAGE value="add authen" />
     <MESSAGE value="commit3" />
-    <option name="LAST_COMMIT_MESSAGE" value="commit3" />
+    <MESSAGE value="mock test" />
+    <option name="LAST_COMMIT_MESSAGE" value="mock test" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>
