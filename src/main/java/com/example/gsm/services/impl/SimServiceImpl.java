@@ -26,7 +26,7 @@ public class SimServiceImpl implements SimService {
 
     private final SimRepository simRepository;
     private final MongoTemplate mongoTemplate;
-    private final ObjectMapper objectMapper; // Spring inject Jackson
+    private final ObjectMapper objectMapper;
 
     @Override
     public void processSimJson(String json) throws Exception {

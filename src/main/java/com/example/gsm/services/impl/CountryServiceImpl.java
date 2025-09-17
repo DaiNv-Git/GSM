@@ -150,16 +150,33 @@ public class CountryServiceImpl implements CountryService {
 
     @Override
     public List<CountryPriceDTO> getAllServicesByCountryCode(String countryCode) {
-        // Lấy Country
+        // 1. Lấy Country trước
         Country country = countryRepository.findByCountryCode(countryCode)
                 .orElse(null);
-
         if (country == null) {
             return List.of();
         }
 
+        // 2. Lấy giá từ bảng ServiceCountryPrice
         List<ServiceCountryPrice> prices = priceRepository.findByCountryCode(countryCode);
 
+        // 3. Nếu không có trong ServiceCountryPrice → fallback sang ServiceEntity
+        if (prices == null || prices.isEmpty()) {
+            // Lấy danh sách ServiceEntity theo countryCode
+            List<ServiceEntity> services = serviceRepository.findAllByCountryCode(countryCode);
+
+            // Map sang DTO (giá lấy từ ServiceEntity)
+            return services.stream().map(serviceEntity -> CountryPriceDTO.builder()
+                    .serviceCode(serviceEntity.getCode())
+                    .serviceName(serviceEntity.getText())
+                    .serviceImage(serviceEntity.getImage())
+                    .minPrice(serviceEntity.getPrice()) // fallback price
+                    .maxPrice(serviceEntity.getPrice())
+                    .pricePerDay(serviceEntity.getPricePerDay())
+                    .build()).toList();
+        }
+
+        // 4. Nếu có dữ liệu ServiceCountryPrice
         List<String> serviceCodes = prices.stream()
                 .map(ServiceCountryPrice::getServiceCode)
                 .distinct()
@@ -167,22 +184,32 @@ public class CountryServiceImpl implements CountryService {
 
         List<ServiceEntity> services = serviceRepository.findAllByCodeIn(serviceCodes);
 
-        // Map sang DTO
+        // Map sang DTO (ưu tiên giá từ ServiceCountryPrice)
         return prices.stream().map(price -> {
             ServiceEntity serviceEntity = services.stream()
                     .filter(s -> s.getCode().equals(price.getServiceCode()))
                     .findFirst()
                     .orElse(null);
 
+            double minPrice = price.getMinPrice() > 0 ? price.getMinPrice() :
+                    (serviceEntity != null ? serviceEntity.getPrice() : 0);
+
+            double maxPrice = price.getMaxPrice() > 0 ? price.getMaxPrice() :
+                    (serviceEntity != null ? serviceEntity.getPrice() : 0);
+
+            double pricePerDay = price.getPricePerDay() > 0 ? price.getPricePerDay() :
+                    (serviceEntity != null ? serviceEntity.getPricePerDay() : 0);
+
             return CountryPriceDTO.builder()
                     .serviceCode(price.getServiceCode())
                     .serviceName(serviceEntity != null ? serviceEntity.getText() : null)
                     .serviceImage(serviceEntity != null ? serviceEntity.getImage() : null)
-                    .minPrice(price.getMinPrice())
-                    .maxPrice(price.getMaxPrice())
-                    .pricePerDay(price.getPricePerDay())
+                    .minPrice(minPrice)
+                    .maxPrice(maxPrice)
+                    .pricePerDay(pricePerDay)
                     .build();
         }).toList();
     }
+
 
 }
