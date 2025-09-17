@@ -13,10 +13,7 @@ import com.example.gsm.services.CountryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,7 +36,6 @@ public class CountryServiceImpl implements CountryService {
                     .filter(code -> code != null && !code.isEmpty())
                     .collect(Collectors.toSet());
 
-            // Lấy danh sách Country theo countryCodes
             List<Country> countries = countryRepository.findAll().stream()
                     .filter(c -> countryCodes.contains(c.getCountryCode()))
                     .collect(Collectors.toList());
@@ -48,19 +44,73 @@ public class CountryServiceImpl implements CountryService {
     }
 
     public List<CountryPriceDTO> getAllCountriesByServiceCode(String serviceCode, String name) {
+
         List<ServiceCountryPrice> prices = priceRepository.findByServiceCode(serviceCode);
 
-        // Lấy danh sách countryCode
+        if (prices == null || prices.isEmpty()) {
+            ServiceEntity service = serviceRepository.findByCode(serviceCode).orElse(null);
+            if (service == null) {
+                return Collections.emptyList();
+            }
+
+            List<Country> countries;
+            if (name != null && !name.isEmpty()) {
+                countries = countryRepository.findAllByCountryCodeInAndCountryNameContainingIgnoreCase(
+                        Collections.singletonList(service.getCountryCode()), name);
+            } else {
+                countries = countryRepository.findAllByCountryCodeIn(Collections.singletonList(service.getCountryCode()));
+            }
+
+            Country country;
+            if (countries.isEmpty()) {
+                country = new Country();
+                country.setCountryCode(service.getCountryCode());
+                country.setCountryName(service.getCountryCode());
+                country.setFlagImage(null);
+            } else {
+                country = countries.get(0);
+            }
+
+            CountryPriceDTO dto = CountryPriceDTO.builder()
+                    .countryCode(country.getCountryCode())
+                    .countryName(country.getCountryName())
+                    .flagImage(country.getFlagImage())
+                    .minPrice(service.getPrice())
+                    .maxPrice(service.getPrice())
+                    .pricePerDay(service.getPricePerDay())
+                    .build();
+
+            return Collections.singletonList(dto);
+        }
+
+        // ----- Nếu có prices thì logic cũ + fallback country -----
+        // Lấy danh sách countryCode từ prices
         List<String> countryCodes = prices.stream()
                 .map(ServiceCountryPrice::getCountryCode)
                 .distinct()
                 .toList();
 
+        // Tìm trong bảng country
         List<Country> countries;
         if (name != null && !name.isEmpty()) {
             countries = countryRepository.findAllByCountryCodeInAndCountryNameContainingIgnoreCase(countryCodes, name);
         } else {
             countries = countryRepository.findAllByCountryCodeIn(countryCodes);
+        }
+
+        // Nếu thiếu hoặc không có, lấy thêm countryCode từ bảng services
+        ServiceEntity service = serviceRepository.findByCode(serviceCode).orElse(null);
+        if (service != null && service.getCountryCode() != null) {
+            String serviceCountryCode = service.getCountryCode();
+            boolean alreadyExists = countries.stream()
+                    .anyMatch(c -> c.getCountryCode().equals(serviceCountryCode));
+            if (!alreadyExists) {
+                Country fallbackCountry = new Country();
+                fallbackCountry.setCountryCode(serviceCountryCode);
+                fallbackCountry.setCountryName(serviceCountryCode);
+                fallbackCountry.setFlagImage(null);
+                countries.add(fallbackCountry);
+            }
         }
 
         // Map sang DTO
@@ -69,6 +119,13 @@ public class CountryServiceImpl implements CountryService {
                     .filter(c -> c.getCountryCode().equals(price.getCountryCode()))
                     .findFirst()
                     .orElse(null);
+
+            if (country == null && service != null && service.getCountryCode().equals(price.getCountryCode())) {
+                country = new Country();
+                country.setCountryCode(service.getCountryCode());
+                country.setCountryName(service.getCountryCode());
+                country.setFlagImage(null);
+            }
 
             if (country == null) return null;
 
@@ -86,22 +143,40 @@ public class CountryServiceImpl implements CountryService {
     }
 
 
+
     public Optional<ServiceCountryPrice> getPriceByServiceAndCountry(String serviceCode, String countryCode) {
         return priceRepository.findByServiceCodeAndCountryCode(serviceCode, countryCode);
     }
 
     @Override
     public List<CountryPriceDTO> getAllServicesByCountryCode(String countryCode) {
-        // Lấy Country
+        // 1. Lấy Country trước
         Country country = countryRepository.findByCountryCode(countryCode)
                 .orElse(null);
-
         if (country == null) {
             return List.of();
         }
 
+        // 2. Lấy giá từ bảng ServiceCountryPrice
         List<ServiceCountryPrice> prices = priceRepository.findByCountryCode(countryCode);
 
+        // 3. Nếu không có trong ServiceCountryPrice → fallback sang ServiceEntity
+        if (prices == null || prices.isEmpty()) {
+            // Lấy danh sách ServiceEntity theo countryCode
+            List<ServiceEntity> services = serviceRepository.findAllByCountryCode(countryCode);
+
+            // Map sang DTO (giá lấy từ ServiceEntity)
+            return services.stream().map(serviceEntity -> CountryPriceDTO.builder()
+                    .serviceCode(serviceEntity.getCode())
+                    .serviceName(serviceEntity.getText())
+                    .serviceImage(serviceEntity.getImage())
+                    .minPrice(serviceEntity.getPrice()) // fallback price
+                    .maxPrice(serviceEntity.getPrice())
+                    .pricePerDay(serviceEntity.getPricePerDay())
+                    .build()).toList();
+        }
+
+        // 4. Nếu có dữ liệu ServiceCountryPrice
         List<String> serviceCodes = prices.stream()
                 .map(ServiceCountryPrice::getServiceCode)
                 .distinct()
@@ -109,22 +184,32 @@ public class CountryServiceImpl implements CountryService {
 
         List<ServiceEntity> services = serviceRepository.findAllByCodeIn(serviceCodes);
 
-        // Map sang DTO
+        // Map sang DTO (ưu tiên giá từ ServiceCountryPrice)
         return prices.stream().map(price -> {
             ServiceEntity serviceEntity = services.stream()
                     .filter(s -> s.getCode().equals(price.getServiceCode()))
                     .findFirst()
                     .orElse(null);
 
+            double minPrice = price.getMinPrice() > 0 ? price.getMinPrice() :
+                    (serviceEntity != null ? serviceEntity.getPrice() : 0);
+
+            double maxPrice = price.getMaxPrice() > 0 ? price.getMaxPrice() :
+                    (serviceEntity != null ? serviceEntity.getPrice() : 0);
+
+            double pricePerDay = price.getPricePerDay() > 0 ? price.getPricePerDay() :
+                    (serviceEntity != null ? serviceEntity.getPricePerDay() : 0);
+
             return CountryPriceDTO.builder()
                     .serviceCode(price.getServiceCode())
                     .serviceName(serviceEntity != null ? serviceEntity.getText() : null)
                     .serviceImage(serviceEntity != null ? serviceEntity.getImage() : null)
-                    .minPrice(price.getMinPrice())
-                    .maxPrice(price.getMaxPrice())
-                    .pricePerDay(price.getPricePerDay())
+                    .minPrice(minPrice)
+                    .maxPrice(maxPrice)
+                    .pricePerDay(pricePerDay)
                     .build();
         }).toList();
     }
+
 
 }

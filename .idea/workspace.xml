@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="commit3" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Enum" />
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="dev" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="enabledProfiles">
+      <list>
+        <option value="backbase" />
+      </list>
+    </option>
+  </component>
+  <component name="MavenRunner">
+    <option name="skipTests" value="true" />
+  </component>
+  <component name="ProjectId" id="32GlLAaiz9GU9Z0vvjHNOGjvEVb" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RequestMappingsPanelOrder0" value="0" />
+    <property name="RequestMappingsPanelOrder1" value="1" />
+    <property name="RequestMappingsPanelWidth0" value="75" />
+    <property name="RequestMappingsPanelWidth1" value="75" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+  </component>
+  <component name="RunManager">
+    <configuration name="GsmApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="GSM" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.gsm.GsmApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="" />
+      <created>1757054736997</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1757054736997</updated>
+      <workItem from="1757054739706" duration="1672000" />
+      <workItem from="1757057507636" duration="20732000" />
+      <workItem from="1757327176521" duration="23000" />
+      <workItem from="1757576218783" duration="1075000" />
+      <workItem from="1757666870774" duration="25204000" />
+      <workItem from="1758016315786" duration="728000" />
+      <workItem from="1758074044158" duration="11996000" />
+      <workItem from="1758092958889" duration="2643000" />
+    </task>
+    <task id="LOCAL-00001" summary="add config cors">
+      <created>1757060156635</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1757060156635</updated>
+    </task>
+    <task id="LOCAL-00002" summary="add dashboard">
+      <created>1757306227788</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1757306227788</updated>
+    </task>
+    <task id="LOCAL-00003" summary="add by dainv">
+      <created>1757324061834</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1757324061834</updated>
+    </task>
+    <task id="LOCAL-00004" summary="add by dainv">
+      <created>1757327184890</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1757327184890</updated>
+    </task>
+    <task id="LOCAL-00005" summary="add test message">
+      <created>1757668683942</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1757668683942</updated>
+    </task>
+    <task id="LOCAL-00006" summary="aaa">
+      <created>1757672698208</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1757672698208</updated>
+    </task>
+    <task id="LOCAL-00007" summary="testweb socket">
+      <created>1757904431980</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1757904431980</updated>
+    </task>
+    <task id="LOCAL-00008" summary="testweb socket">
+      <created>1757905030349</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1757905030349</updated>
+    </task>
+    <task id="LOCAL-00009" summary="testweb socket">
+      <created>1757919516067</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1757919516067</updated>
+    </task>
+    <task id="LOCAL-00010" summary="add new service">
+      <created>1757920928239</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1757920928239</updated>
+    </task>
+    <task id="LOCAL-00011" summary="add new service">
+      <created>1757921060007</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1757921060007</updated>
+    </task>
+    <task id="LOCAL-00012" summary="fix page">
+      <created>1757925660657</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1757925660657</updated>
+    </task>
+    <task id="LOCAL-00013" summary="fix page">
+      <created>1757988566089</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1757988566089</updated>
+    </task>
+    <task id="LOCAL-00014" summary="fix page">
+      <created>1757988649082</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1757988649083</updated>
+    </task>
+    <task id="LOCAL-00015" summary="fix page">
+      <created>1757988745094</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1757988745094</updated>
+    </task>
+    <task id="LOCAL-00016" summary="fix page">
+      <created>1757990821426</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1757990821427</updated>
+    </task>
+    <task id="LOCAL-00017" summary="fix api">
+      <created>1758079432829</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1758079432830</updated>
+    </task>
+    <task id="LOCAL-00018" summary="commit">
+      <created>1758080229089</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1758080229089</updated>
+    </task>
+    <task id="LOCAL-00019" summary="commit">
+      <created>1758084070662</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1758084070663</updated>
+    </task>
+    <task id="LOCAL-00020" summary="commit1">
+      <created>1758085574504</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1758085574504</updated>
+    </task>
+    <task id="LOCAL-00021" summary="commit1">
+      <created>1758086100681</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1758086100682</updated>
+    </task>
+    <task id="LOCAL-00022" summary="commit2">
+      <created>1758090700519</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1758090700519</updated>
+    </task>
+    <task id="LOCAL-00023" summary="commit3">
+      <created>1758091940554</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1758091940555</updated>
+    </task>
+    <task id="LOCAL-00024" summary="commit3">
+      <created>1758092287234</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1758092287234</updated>
+    </task>
+    <task id="LOCAL-00025" summary="commit3">
+      <created>1758095544860</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1758095544861</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="add config cors" />
+    <MESSAGE value="add dashboard" />
+    <MESSAGE value="add by dainv" />
+    <MESSAGE value="add test message" />
+    <MESSAGE value="aaa" />
+    <MESSAGE value="testweb socket" />
+    <MESSAGE value="add new service" />
+    <MESSAGE value="fix page" />
+    <MESSAGE value="fix api" />
+    <MESSAGE value="commit" />
+    <MESSAGE value="commit1" />
+    <MESSAGE value="commit2" />
+    <MESSAGE value="commit3" />
+    <option name="LAST_COMMIT_MESSAGE" value="commit3" />
+  </component>
+  <component name="XDebuggerManager">
+    <pin-to-top-manager>
+      <pinned-members>
+        <PinnedItemInfo parentTag="com.example.gsm.repositories.impl.DashboardServiceImpl$Totals" memberName="totalAmountSuccess" />
+      </pinned-members>
+    </pin-to-top-manager>
+  </component>
+</project>

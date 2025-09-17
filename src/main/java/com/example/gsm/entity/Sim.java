@@ -4,6 +4,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -29,5 +30,13 @@ public class Sim {
     private String status;
 
     /** Mã quốc gia */
-    private String countryCode;
+    private String countryCode ="JVM";
+
+    private String deviceName;
+    private String comName;
+    private String simProvider;
+    private String ccid;
+    private String content;
+
+    private Date lastUpdated;
 }

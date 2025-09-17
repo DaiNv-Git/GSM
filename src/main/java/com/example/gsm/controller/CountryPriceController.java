@@ -28,6 +28,7 @@ public class CountryPriceController {
             @RequestParam(required = false) String name) {
         return ResponseEntity.ok(countryService.getAllCountriesByServiceCode(serviceCode, name));
     }
+
     @GetMapping("/countriesHaveSim")
     public ResponseEntity<List<Country>> getCountriesWithSim() {
         List<Country> countries = countryService.getAllHaveSim();

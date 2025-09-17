@@ -22,4 +22,6 @@ public class ServiceServiceImpl implements ServiceService {
         String regex = ".*" + name + ".*";
         return serviceRepository.findByTextRegexIgnoreCase(regex);
     }
+
+
 }

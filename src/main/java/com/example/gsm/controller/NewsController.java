@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class NewsController {
 
-    private final NewsService newsService; // interface
+    private final NewsService newsService;
 
     @PostMapping
     public ResponseEntity<News> createNews(@RequestBody News news) {
