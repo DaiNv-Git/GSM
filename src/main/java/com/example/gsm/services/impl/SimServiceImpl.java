@@ -152,10 +152,24 @@ public class SimServiceImpl implements SimService {
 
     // Đánh dấu các sim không còn trong request thành replaced
     private void markReplacedSims(Set<String> phonesInRequest) {
-        Query query = new Query(Criteria.where("phoneNumber").nin(phonesInRequest));
-        Update update = new Update().set("status", "replaced").set("lastUpdated", new Date());
-        mongoTemplate.updateMulti(query, update, Sim.class);
+        List<Sim> allSims = simRepository.findAll();
+        List<String> keys = allSims.stream()
+                .map(s -> buildKey(s.getPhoneNumber(), s.getDeviceName()))
+                .toList();
+
+        // Lấy danh sách sim cần replace
+        List<Sim> simsToReplace = allSims.stream()
+                .filter(s -> !phonesInRequest.contains(buildKey(s.getPhoneNumber(), s.getDeviceName())))
+                .toList();
+
+        simsToReplace.forEach(s -> {
+            Query query = new Query(Criteria.where("phoneNumber").is(s.getPhoneNumber())
+                    .and("deviceName").is(s.getDeviceName()));
+            Update update = new Update().set("status", "replaced").set("lastUpdated", new Date());
+            mongoTemplate.updateMulti(query, update, Sim.class);
+        });
     }
+
 
     // Hàm tiện ích để tránh null
     private String defaultIfNull(String value) {
