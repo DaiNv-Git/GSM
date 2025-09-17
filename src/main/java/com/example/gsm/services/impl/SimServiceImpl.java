@@ -117,6 +117,7 @@ public class SimServiceImpl implements SimService {
                         .append("ccid", defaultIfNull(incoming.getCcid()))
                         .append("content", defaultIfNull(incoming.getContent()))
                         .append("status", "active")
+                        .append("activeDate", new Date())
                         .append("lastUpdated", new Date());
 
                 Document update = new Document("$set", setDoc);

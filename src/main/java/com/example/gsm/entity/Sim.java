@@ -39,4 +39,5 @@ public class Sim {
     private String content;
 
     private Date lastUpdated;
+    private Date activeDate;
 }
