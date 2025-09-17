@@ -13,10 +13,7 @@ import com.example.gsm.services.CountryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,17 +47,70 @@ public class CountryServiceImpl implements CountryService {
     public List<CountryPriceDTO> getAllCountriesByServiceCode(String serviceCode, String name) {
         List<ServiceCountryPrice> prices = priceRepository.findByServiceCode(serviceCode);
 
-        // Lấy danh sách countryCode
+        if (prices == null || prices.isEmpty()) {
+            ServiceEntity service = serviceRepository.findByCode(serviceCode).orElse(null);
+            if (service == null) {
+                return Collections.emptyList(); // Không có luôn thì trả list rỗng
+            }
+
+            List<Country> countries;
+            if (name != null && !name.isEmpty()) {
+                countries = countryRepository.findAllByCountryCodeInAndCountryNameContainingIgnoreCase(
+                        Collections.singletonList(service.getCountryCode()), name);
+            } else {
+                countries = countryRepository.findAllByCountryCodeIn(Collections.singletonList(service.getCountryCode()));
+            }
+
+            Country country;
+            if (countries.isEmpty()) {
+                country = new Country();
+                country.setCountryCode(service.getCountryCode());
+                country.setCountryName(service.getCountryCode());
+                country.setFlagImage(null);
+            } else {
+                country = countries.get(0);
+            }
+
+            CountryPriceDTO dto = CountryPriceDTO.builder()
+                    .countryCode(country.getCountryCode())
+                    .countryName(country.getCountryName())
+                    .flagImage(country.getFlagImage())
+                    .minPrice(service.getPrice())
+                    .maxPrice(service.getPrice())
+                    .pricePerDay(service.getPricePerDay())
+                    .build();
+
+            return Collections.singletonList(dto);
+        }
+
+        // ----- Nếu có prices thì logic cũ + fallback country -----
+        // Lấy danh sách countryCode từ prices
         List<String> countryCodes = prices.stream()
                 .map(ServiceCountryPrice::getCountryCode)
                 .distinct()
                 .toList();
 
+        // Tìm trong bảng country
         List<Country> countries;
         if (name != null && !name.isEmpty()) {
             countries = countryRepository.findAllByCountryCodeInAndCountryNameContainingIgnoreCase(countryCodes, name);
         } else {
             countries = countryRepository.findAllByCountryCodeIn(countryCodes);
+        }
+
+        // Nếu thiếu hoặc không có, lấy thêm countryCode từ bảng services
+        ServiceEntity service = serviceRepository.findByCode(serviceCode).orElse(null);
+        if (service != null && service.getCountryCode() != null) {
+            String serviceCountryCode = service.getCountryCode();
+            boolean alreadyExists = countries.stream()
+                    .anyMatch(c -> c.getCountryCode().equals(serviceCountryCode));
+            if (!alreadyExists) {
+                Country fallbackCountry = new Country();
+                fallbackCountry.setCountryCode(serviceCountryCode);
+                fallbackCountry.setCountryName(serviceCountryCode);
+                fallbackCountry.setFlagImage(null);
+                countries.add(fallbackCountry);
+            }
         }
 
         // Map sang DTO
@@ -69,6 +119,13 @@ public class CountryServiceImpl implements CountryService {
                     .filter(c -> c.getCountryCode().equals(price.getCountryCode()))
                     .findFirst()
                     .orElse(null);
+
+            if (country == null && service != null && service.getCountryCode().equals(price.getCountryCode())) {
+                country = new Country();
+                country.setCountryCode(service.getCountryCode());
+                country.setCountryName(service.getCountryCode());
+                country.setFlagImage(null);
+            }
 
             if (country == null) return null;
 
@@ -84,6 +141,7 @@ public class CountryServiceImpl implements CountryService {
 
         return result;
     }
+
 
 
     public Optional<ServiceCountryPrice> getPriceByServiceAndCountry(String serviceCode, String countryCode) {

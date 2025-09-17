@@ -26,6 +26,7 @@ public class SimRentalService {
     private final OrderRepository orderRepository;
     private final ServiceRepository serviceRepository;
     private final CountryRepository countryRepository;
+
     @Transactional
     public RentSimResponse rentSim(Long accountId,
                                    StatusCode statusCode,
@@ -34,19 +35,20 @@ public class SimRentalService {
                                    Double totalCost,
                                    int rentDuration,
                                    List<String> services,
-                                   String provider,String type) {
-    
+                                   String provider, String type) {
+
         UserAccount user = userAccountRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
-    
+
         if (user.getBalanceAmount() < totalCost) {
             throw new RuntimeException("Số dư không đủ");
         }
-        
+
         List<Sim> sims = simRepository.findByCountryCode(countryCode);
         Sim selectedSim = null;
         for (Sim sim : sims) {
-            long rented = orderRepository.countByPhoneAndServiceCodesAndExpiredAtAfter(sim.getPhoneNumber(), services,new Date());
+            long rented = orderRepository.countByPhoneAndServiceCodesAndExpiredAtAfter(
+                    sim.getPhoneNumber(), services, new Date());
             if (rented <= 0) {
                 selectedSim = sim;
                 break;
@@ -66,7 +68,6 @@ public class SimRentalService {
 
         userAccountRepository.save(user);
 
-        
         Order order = new Order();
         order.setAccountId(accountId);
         order.setType(type);
@@ -76,9 +77,9 @@ public class SimRentalService {
         order.setStatusCode(statusCode.toString());
         order.setCreatedAt(new Date());
         order.setUpdatedAt(new Date());
-        
+
         long expiredMillis = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(rentDuration);
-    
+
         Sim finalSelectedSim = selectedSim;
         List<Order.Stock> stockList = services.stream().map(serviceCode -> {
             Order.Stock stock = new Order.Stock();
@@ -88,24 +89,38 @@ public class SimRentalService {
             stock.setExpiredAt(new Date(expiredMillis));
             return stock;
         }).toList();
-    
+
         order.setStock(stockList);
         order = orderRepository.save(order);
-    
+
+        if (statusCode == StatusCode.SUCCESS) {
+            selectedSim.setRevenue(
+                    Optional.ofNullable(selectedSim.getRevenue()).orElse(0.0) + totalCost
+            );
+        } else if (statusCode == StatusCode.REFUNDED) {
+            selectedSim.setRevenue(
+                    Optional.ofNullable(selectedSim.getRevenue()).orElse(0.0) - totalCost
+            );
+            if (selectedSim.getRevenue() < 0) {
+                selectedSim.setRevenue(0.0);
+            }
+        }
+        simRepository.save(selectedSim);
+
         Country foundCountry = countryRepository.findByCountryCode(countryCode)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy countryCode: " + countryCode));
-    
+
         String combinedServiceNames = services.stream()
                 .map(code -> serviceRepository.findByCode(code)
                         .map(ServiceEntity::getText)
                         .orElse("Không rõ dịch vụ"))
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
-    
+
         return new RentSimResponse(
                 order.getId(),
                 selectedSim.getPhoneNumber(),
-                combinedServiceNames,     
+                combinedServiceNames,
                 String.join(",", services),
                 foundCountry.getCountryName(),
                 rentDuration,
