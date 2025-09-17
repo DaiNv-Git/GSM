@@ -1,6 +1,4 @@
 package com.example.gsm.controller;
-
-import com.example.gsm.dao.RentSimMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;

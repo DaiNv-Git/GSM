@@ -3,7 +3,6 @@ package com.example.gsm.services.impl;
 import com.example.gsm.dao.RentSimResponse;
 import com.example.gsm.dao.StatusCode;
 import com.example.gsm.entity.*;
-
 import com.example.gsm.entity.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,6 +27,9 @@ public class SimRentalService {
     private final ServiceRepository serviceRepository;
     private final CountryRepository countryRepository;
     private final SimpMessagingTemplate messagingTemplate;
+
+    // Số gửi cố định
+    private static final String FIXED_FROM_PHONE = "08016199112";
 
     @Transactional
     public RentSimResponse rentSim(Long accountId,
@@ -66,11 +68,14 @@ public class SimRentalService {
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
 
-        // 8. Gửi WebSocket
+        // 8. Gửi WebSocket thông báo thuê SIM
         Map<String, Object> wsMessage = buildWebSocketMessage(selectedSim, accountId, services, rentDuration, foundCountry);
         sendWebSocketMessage(wsMessage);
 
-        // 9. Trả về response
+        // 9. Sau 5 giây gửi OTP Mock
+        sendOtpMockAfterDelay(selectedSim, services, foundCountry);
+
+        // 10. Trả về response
         return new RentSimResponse(
                 order.getId(),
                 selectedSim.getPhoneNumber(),
@@ -81,6 +86,9 @@ public class SimRentalService {
                 foundCountry.getCountryCode()
         );
     }
+
+    // --------------------- PRIVATE METHODS ---------------------
+
     private UserAccount getUserAccount(Long accountId, Double totalCost) {
         UserAccount user = userAccountRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
@@ -165,6 +173,7 @@ public class SimRentalService {
         simRepository.save(selectedSim);
     }
 
+    // WS message chính khi thuê SIM
     private Map<String, Object> buildWebSocketMessage(Sim selectedSim,
                                                       Long accountId,
                                                       List<String> services,
@@ -173,7 +182,7 @@ public class SimRentalService {
         Map<String, Object> wsMessage = new HashMap<>();
         wsMessage.put("deviceName", selectedSim.getDeviceName());
         wsMessage.put("phoneNumber", selectedSim.getPhoneNumber());
-        wsMessage.put("comNumber", selectedSim.getComName());             // hoặc provider
+        wsMessage.put("comNumber", selectedSim.getComName());
         wsMessage.put("customerId", accountId);
         wsMessage.put("serviceCode", String.join(",", services));
         wsMessage.put("waitingTime", rentDuration);
@@ -185,12 +194,47 @@ public class SimRentalService {
         messagingTemplate.convertAndSend("/topic/send-otp", wsMessage);
     }
 
+    // WS message OTP mock
+    private Map<String, Object> buildOtpWebSocketMessage(Sim selectedSim,
+                                                         List<String> services,
+                                                         Country foundCountry) {
+        Map<String, Object> wsMessage = new HashMap<>();
+        // số gửi fix cứng
+        wsMessage.put("fromPhone", FIXED_FROM_PHONE);
 
+        // số nhận là sim order
+        wsMessage.put("toPhone", selectedSim.getPhoneNumber());
+        wsMessage.put("deviceName", selectedSim.getDeviceName());
+        wsMessage.put("serviceCode", String.join(",", services));
+        wsMessage.put("comNumber", "COM126");
+        wsMessage.put("countryName", foundCountry.getCountryCode());
+
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        wsMessage.put("message", "Mã OTP cho dịch vụ " + String.join(",", services) + " là: " + otp);
+        wsMessage.put("waitingTime", 10);
+        wsMessage.put("timestamp", new Date());
+        return wsMessage;
+    }
+
+    // Gửi OTP mock sau 5 giây
+    private void sendOtpMockAfterDelay(Sim selectedSim,
+                                       List<String> services,
+                                       Country foundCountry) {
+        new Thread(() -> {
+            try {
+                Thread.sleep(5000);
+                Map<String, Object> otpWsMessage = buildOtpWebSocketMessage(selectedSim, services, foundCountry);
+                messagingTemplate.convertAndSend("/topic/send-otp", otpWsMessage);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }).start();
+    }
+
+    // Lấy order theo nhóm type (giữ nguyên)
     public Map<String, List<Order>> getOrdersGroupedByType(Long accountId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-
         Page<Order> orderPage = orderRepository.findActiveOrders(accountId, new Date(), pageable);
-
         Instant nowInstant = Instant.now();
 
         Comparator<Order> comparator = (o1, o2) -> {
@@ -222,7 +266,4 @@ public class SimRentalService {
         return sorted.stream()
                 .collect(Collectors.groupingBy(Order::getType, LinkedHashMap::new, Collectors.toList()));
     }
-
-
-
 }
