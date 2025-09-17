@@ -14,11 +14,8 @@ public class RentSimWebSocketController {
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/receive-otp")
-    public void handleRentSim(@Payload RentSimMessage message) {
-        // Xử lý logic bạn muốn khi nhận message từ client
-        System.out.println("Nhận từ client: " + message);
-
-        // Ví dụ: broadcast message nhận được tới tất cả client
-        messagingTemplate.convertAndSend("/topic/send-otp", message);
+    public void handleRentSim(@Payload String message) {
+        System.out.println("📩 Nhận từ client: " + message);
+//        messagingTemplate.convertAndSend("/topic/send-otp", message);
     }
 }
