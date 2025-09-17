@@ -92,7 +92,7 @@ public class SimRentalService {
     }
 
     private Sim selectAvailableSim(String countryCode, List<String> services) {
-        List<Sim> sims = simRepository.findByCountryCodeOrderByRevenueDesc(countryCode);
+        List<Sim> sims = simRepository.findByCountryCodeAndStatusOrderByRevenueDesc(countryCode,"active");
         for (Sim sim : sims) {
             long rented = orderRepository.countByPhoneAndServiceCodesAndExpiredAtAfter(
                     sim.getPhoneNumber(), services, new Date());

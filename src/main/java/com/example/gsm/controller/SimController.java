@@ -20,6 +20,7 @@ public class SimController {
     @PostMapping("/simlist")
     public ResponseEntity<?> createSimList(@RequestBody String json) {
         try {
+            System.out.println("nhận sim json");
             simService.processSimJson(json);
 
             return ResponseEntity.ok("Nhận dữ liệu thành công!");

@@ -52,7 +52,6 @@ public class SimServiceImpl implements SimService {
         // 4. Bulk insert và update
         bulkInsertAndUpdate(insertUpdate);
 
-        // 5. Đánh dấu các sim không còn trong request
         markReplacedSims(phonesInRequest);
     }
 
