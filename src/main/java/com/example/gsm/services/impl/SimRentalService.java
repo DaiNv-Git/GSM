@@ -67,7 +67,7 @@ public class SimRentalService {
                 .orElse("");
 
         // 8. Gửi WebSocket
-        Map<String, Object> wsMessage = buildWebSocketMessage(selectedSim, flatform, accountId, services, rentDuration, foundCountry);
+        Map<String, Object> wsMessage = buildWebSocketMessage(selectedSim, accountId, services, rentDuration, foundCountry);
         sendWebSocketMessage(wsMessage);
 
         // 9. Trả về response
@@ -166,18 +166,18 @@ public class SimRentalService {
     }
 
     private Map<String, Object> buildWebSocketMessage(Sim selectedSim,
-                                                      String flatform,
                                                       Long accountId,
                                                       List<String> services,
                                                       int rentDuration,
                                                       Country foundCountry) {
         Map<String, Object> wsMessage = new HashMap<>();
+        wsMessage.put("deviceName", selectedSim.getDeviceName());
         wsMessage.put("phoneNumber", selectedSim.getPhoneNumber());
-        wsMessage.put("comNumber", flatform);             // hoặc provider
+        wsMessage.put("comNumber", selectedSim.getPhoneNumber());             // hoặc provider
         wsMessage.put("customerId", accountId);
         wsMessage.put("serviceCode", String.join(",", services));
         wsMessage.put("waitingTime", rentDuration);
-        wsMessage.put("countryName", foundCountry.getCountryName());
+        wsMessage.put("countryName", foundCountry.getCountryCode());
         return wsMessage;
     }
 
