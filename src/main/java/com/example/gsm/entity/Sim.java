@@ -32,7 +32,7 @@ public class Sim {
     /** Mã quốc gia */
     private String countryCode ="JVM";
 
-    private String computer;
+    private String deviceName;
     private String comName;
     private String simProvider;
     private String ccid;

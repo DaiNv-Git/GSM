@@ -44,7 +44,9 @@ public class SimRentalService {
             throw new RuntimeException("Số dư không đủ");
         }
 
-        List<Sim> sims = simRepository.findByCountryCode(countryCode);
+//        List<Sim> sims = simRepository.findByCountryCode(countryCode);
+        List<Sim> sims = simRepository.findByCountryCodeOrderByRevenueDesc(countryCode);
+
         Sim selectedSim = null;
         for (Sim sim : sims) {
             long rented = orderRepository.countByPhoneAndServiceCodesAndExpiredAtAfter(

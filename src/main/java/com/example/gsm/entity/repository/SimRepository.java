@@ -8,4 +8,6 @@ import java.util.List;
 public interface SimRepository extends MongoRepository<Sim, String> {
     List<Sim> findByCountryCode(String CountryCode);
     List<Sim> findByPhoneNumber(String phonenumber);
+    List<Sim> findByCountryCodeOrderByRevenueDesc(String countryCode);
+
 }

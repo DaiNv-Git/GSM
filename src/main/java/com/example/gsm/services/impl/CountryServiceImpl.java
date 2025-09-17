@@ -36,7 +36,6 @@ public class CountryServiceImpl implements CountryService {
                     .filter(code -> code != null && !code.isEmpty())
                     .collect(Collectors.toSet());
 
-            // Lấy danh sách Country theo countryCodes
             List<Country> countries = countryRepository.findAll().stream()
                     .filter(c -> countryCodes.contains(c.getCountryCode()))
                     .collect(Collectors.toList());
