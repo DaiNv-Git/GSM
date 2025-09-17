@@ -48,7 +48,7 @@ public class SimController {
     }
 
     /** Lấy SIM theo id */
-    @GetMapping("/{id}")
+    @GetMapping("/find/{id}")
     public ResponseCommon<Sim> getSimById(@PathVariable String id) {
         try {
             Optional<Sim> sim = simRepository.findById(id);
@@ -59,7 +59,7 @@ public class SimController {
     }
 
     /** Tạo mới SIM */
-    @PostMapping
+    @PostMapping("create")
     public ResponseCommon<?> createSim(@RequestBody Sim sim) {
         try {
             simRepository.save(sim);
@@ -70,7 +70,7 @@ public class SimController {
     }
 
     /** Cập nhật SIM */
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseCommon<Sim> updateSim(@PathVariable String id, @RequestBody Sim simDetails) {
         try {
             simRepository.findById(id).map(sim -> {
@@ -97,7 +97,7 @@ public class SimController {
     }
 
     /** Xóa SIM */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseCommon<?> deleteSim(@PathVariable String id) {
         try {
             simRepository.findById(id).map(sim -> {
