@@ -45,12 +45,13 @@ public class CountryServiceImpl implements CountryService {
     }
 
     public List<CountryPriceDTO> getAllCountriesByServiceCode(String serviceCode, String name) {
+
         List<ServiceCountryPrice> prices = priceRepository.findByServiceCode(serviceCode);
 
         if (prices == null || prices.isEmpty()) {
             ServiceEntity service = serviceRepository.findByCode(serviceCode).orElse(null);
             if (service == null) {
-                return Collections.emptyList(); // Không có luôn thì trả list rỗng
+                return Collections.emptyList();
             }
 
             List<Country> countries;
