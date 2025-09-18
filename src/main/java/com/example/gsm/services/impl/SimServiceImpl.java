@@ -78,7 +78,7 @@ public class SimServiceImpl implements SimService {
             incomingSims.add(Sim.builder()
                     .phoneNumber(phone)
                     .countryCode(node.path("country_code").asText(DEFAULT_COUNTRY_CODE))
-                    .status(node.path("status").asText("active"))
+                    .status("active") // mặc định active
                     .deviceName(deviceName)
                     .comName(node.path("com_name").asText(""))
                     .simProvider(node.path("sim_provider").asText(""))
@@ -105,14 +105,14 @@ public class SimServiceImpl implements SimService {
 
         for (Sim incoming : incomingSims) {
             Sim exist = existingByPhone.get(incoming.getPhoneNumber());
-            if (exist == null) {
-                // Case 1: sim chưa tồn tại → insert với status "new"
-                incoming.setStatus("new");
+
+            // Case 1: Nếu chưa tồn tại hoặc đang là replaced => insert mới với status active
+            if (exist == null || "replaced".equalsIgnoreCase(exist.getStatus())) {
+                incoming.setStatus("active");
                 toInsert.add(incoming);
             } else {
                 // Case 2: sim đã tồn tại nhưng deviceName hoặc comName khác → update với status active
                 boolean needUpdate = isDataChanged(exist, incoming);
-
                 if (needUpdate) {
                     Document filter = new Document("phoneNumber", incoming.getPhoneNumber());
 
