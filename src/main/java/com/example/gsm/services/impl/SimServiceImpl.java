@@ -34,6 +34,7 @@ public class SimServiceImpl implements SimService {
             throw new IllegalArgumentException("JSON input cannot be null or empty");
         }
 
+        // 1. Parse JSON thành danh sách Sim + phone numbers
         Pair<List<Sim>, Set<String>> parsedData = parseIncomingSims(json);
         List<Sim> incomingSims = parsedData.getLeft();
         Set<String> phonesInRequest = parsedData.getRight();
@@ -42,10 +43,13 @@ public class SimServiceImpl implements SimService {
             return;
         }
 
+        // 2. Lấy danh sách Sim hiện có thành Map
         Map<String, Sim> existingByPhone = getExistingSimMap();
 
+        // 3. Chuẩn bị insert và update
         InsertUpdateResult insertUpdate = prepareInsertAndUpdates(incomingSims, existingByPhone);
 
+        // 4. Bulk insert và update
         bulkInsertAndUpdate(insertUpdate);
 
         // 5. Đánh dấu các sim không còn trong request thành replaced
@@ -94,7 +98,7 @@ public class SimServiceImpl implements SimService {
                 .collect(Collectors.toMap(Sim::getPhoneNumber, s -> s, (a, b) -> a));
     }
 
-    // Chuẩn bị insert và update
+    // Chuẩn bị insert và update (update cả khi status là replaced)
     private InsertUpdateResult prepareInsertAndUpdates(List<Sim> incomingSims, Map<String, Sim> existingByPhone) {
         List<Sim> toInsert = new ArrayList<>();
         List<UpdateOneModel<Document>> updates = new ArrayList<>();
@@ -102,13 +106,15 @@ public class SimServiceImpl implements SimService {
         for (Sim incoming : incomingSims) {
             Sim exist = existingByPhone.get(incoming.getPhoneNumber());
 
-            // Case 1: Nếu chưa tồn tại hoặc đang là replaced => insert mới với status active
-            if (exist == null || "replaced".equalsIgnoreCase(exist.getStatus())) {
+            if (exist == null) {
+                // Chưa có trong DB → insert mới
                 incoming.setStatus("active");
                 toInsert.add(incoming);
             } else {
-                // Case 2: sim đã tồn tại nhưng deviceName hoặc comName khác → update với status active
-                boolean needUpdate = isDataChanged(exist, incoming);
+                // Có rồi (kể cả replaced) → update nếu có khác dữ liệu hoặc status replaced
+                boolean needUpdate = isDataChanged(exist, incoming)
+                        || "replaced".equalsIgnoreCase(exist.getStatus());
+
                 if (needUpdate) {
                     Document filter = new Document("phoneNumber", incoming.getPhoneNumber());
 
@@ -142,9 +148,8 @@ public class SimServiceImpl implements SimService {
 
     // Đánh dấu các sim không còn trong request thành replaced
     private void markReplacedSims(Set<String> phonesInRequest) {
-        // Lọc các sim không có trong request và status khác replaced mới update
-        System.out.println("phonesInRequest: " + phonesInRequest);
-
+        System.out.println("markReplacedSims"+phonesInRequest);
+        // chỉ replace các sim đang active hoặc status khác replaced, không động vào sim mới đã insert
         Query query = new Query(Criteria.where("phoneNumber").nin(phonesInRequest)
                 .and("status").ne("replaced"));
         Update update = new Update().set("status", "replaced").set("lastUpdated", new Date());
