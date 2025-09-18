@@ -147,7 +147,7 @@ public class SimServiceImpl implements SimService {
     // Đánh dấu các sim không còn trong request thành replaced
     private void markReplacedSims(Set<String> phonesInRequest) {
         // Lọc các sim không có trong request và status khác replaced mới update
-        Query query = new Query(Criteria.where("phone_number").nin(phonesInRequest)
+        Query query = new Query(Criteria.where("phoneNumber").nin(phonesInRequest)
                 .and("status").ne("replaced"));
         Update update = new Update().set("status", "replaced").set("lastUpdated", new Date());
         mongoTemplate.updateMulti(query, update, Sim.class);
