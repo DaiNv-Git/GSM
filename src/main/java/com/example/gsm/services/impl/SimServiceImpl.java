@@ -34,7 +34,6 @@ public class SimServiceImpl implements SimService {
             throw new IllegalArgumentException("JSON input cannot be null or empty");
         }
 
-        // 1. Parse JSON thành danh sách Sim + phone numbers
         Pair<List<Sim>, Set<String>> parsedData = parseIncomingSims(json);
         List<Sim> incomingSims = parsedData.getLeft();
         Set<String> phonesInRequest = parsedData.getRight();
@@ -43,13 +42,10 @@ public class SimServiceImpl implements SimService {
             return;
         }
 
-        // 2. Lấy danh sách Sim hiện có thành Map
         Map<String, Sim> existingByPhone = getExistingSimMap();
 
-        // 3. Chuẩn bị insert và update
         InsertUpdateResult insertUpdate = prepareInsertAndUpdates(incomingSims, existingByPhone);
 
-        // 4. Bulk insert và update
         bulkInsertAndUpdate(insertUpdate);
 
         // 5. Đánh dấu các sim không còn trong request thành replaced
@@ -147,6 +143,8 @@ public class SimServiceImpl implements SimService {
     // Đánh dấu các sim không còn trong request thành replaced
     private void markReplacedSims(Set<String> phonesInRequest) {
         // Lọc các sim không có trong request và status khác replaced mới update
+        System.out.println("phonesInRequest: " + phonesInRequest);
+
         Query query = new Query(Criteria.where("phoneNumber").nin(phonesInRequest)
                 .and("status").ne("replaced"));
         Update update = new Update().set("status", "replaced").set("lastUpdated", new Date());
