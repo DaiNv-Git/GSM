@@ -70,8 +70,11 @@ public class SimServiceImpl implements SimService {
         Set<String> phonesInRequest = new HashSet<>();
 
         for (JsonNode node : portDataArray) {
-            String phone = node.path("phone_number").asText("");
-            if (phone.isEmpty()) continue;
+            String phone = node.path("phone_number").asText(null);
+            if (phone == null || phone.trim().isEmpty()) {
+                // bỏ qua nếu không có số điện thoại
+                continue;
+            }
 
             phonesInRequest.add(phone);
 
@@ -148,7 +151,7 @@ public class SimServiceImpl implements SimService {
 
     // Đánh dấu các sim không còn trong request thành replaced
     private void markReplacedSims(Set<String> phonesInRequest) {
-        System.out.println("markReplacedSims"+phonesInRequest);
+        System.out.println("markReplacedSims: " + phonesInRequest);
         // chỉ replace các sim đang active hoặc status khác replaced, không động vào sim mới đã insert
         Query query = new Query(Criteria.where("phoneNumber").nin(phonesInRequest)
                 .and("status").ne("replaced"));
