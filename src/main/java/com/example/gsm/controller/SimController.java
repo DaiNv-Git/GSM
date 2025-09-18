@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Slf4j
 @RestController
 @RequestMapping("/api")
@@ -23,9 +26,14 @@ public class SimController {
     @PostMapping("/simlist")
     public ResponseEntity<?> createSimList(@RequestBody String json) {
         try {
-            log.info("=== [SimController] Nhận request /api/simlist ===");
-            log.debug("Payload JSON: " + json);
-            System.out.println("nhận sim json");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            log.info("=== [SimController] Nhận request /api/simlist === at {}",
+                    LocalDateTime.now().format(formatter));
+
+            log.debug("Payload JSON: {} at {}", json, LocalDateTime.now().format(formatter));
+
+            System.out.println("nhận sim json at " + LocalDateTime.now().format(formatter));
             
             simService.processSimJson(json);
     
