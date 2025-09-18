@@ -10,5 +10,5 @@ public class AgentResponse {
     private String accountId;
     private String firstName;
     private String lastName;
-    private String balanceAmount;
+    private Double balanceAmount;
 }

@@ -6,4 +6,7 @@ import java.util.List;
 
 public interface UserRepository extends MongoRepository<User, String> {
     List<User> findByIsAgentTrueAndIsActiveTrue();
+    List<User> findByIsAdminTrueAndIsActiveTrue();
+    List<User> findByIsDevTrueAndIsActiveTrue();
+    List<User> findByIsPartnerTrueAndIsActiveTrue();
 }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import static com.example.gsm.comon.Constants.CORE_ERROR_CODE;
 import static com.example.gsm.comon.Constants.SUCCESS_CODE;
 
 @RestController
@@ -24,12 +25,20 @@ public class RentController {
 
     @PostMapping("/overview")
     public ResponseCommon<RentResponse> getRentManager(@RequestBody RentRequest req) {
-        return rentService.getRent(req);
+        try{
+            return rentService.getRent(req);
+        }catch (Exception ex){
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 
     @PostMapping("services/prices")
     public ResponseCommon<List<RentServicesResponse>> getRentPrices(@RequestBody RentRequest req) {
-        return rentService.getRentPrices(req);
+        try{
+            return rentService.getRentPrices(req);
+        }catch (Exception ex){
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 
     // API 2: Cập nhật giá
@@ -37,7 +46,11 @@ public class RentController {
     public ResponseCommon<?> updateRentPrices(
             @RequestParam String serviceId,
             @RequestBody Map<String, Integer> newPrices) {
-         rentService.updateRentPrices(serviceId, newPrices);
-         return new ResponseCommon<>(SUCCESS_CODE, "Success",  null);
+        try{
+            rentService.updateRentPrices(serviceId, newPrices);
+            return new ResponseCommon<>(SUCCESS_CODE, "Success",  null);
+        }catch (Exception ex){
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 }

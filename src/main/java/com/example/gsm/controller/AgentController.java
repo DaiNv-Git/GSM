@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.example.gsm.comon.Constants.SUCCESS_CODE;
-import static com.example.gsm.comon.Constants.SUCCESS_MESSAGE;
+import static com.example.gsm.comon.Constants.*;
 
 @RestController()
 @RequestMapping("/api/users")
@@ -25,18 +24,21 @@ public class AgentController {
 
     @GetMapping("/get-all-agents")
     public ResponseCommon<List<AgentResponse>> getActiveAgents() {
+        try {
+            List<AgentResponse> data =  userRepository.findByIsAgentTrueAndIsActiveTrue()
+                    .stream()
+                    .map(u -> new AgentResponse(
+                            u.getId(),
+                            u.getAccountId(),
+                            u.getFirstName(),
+                            u.getLastName(),
+                            u.getBalanceAmount()
+                    ))
+                    .collect(Collectors.toList());
 
-        List<AgentResponse> data =  userRepository.findByIsAgentTrueAndIsActiveTrue()
-                .stream()
-                .map(u -> new AgentResponse(
-                        u.getId(),
-                        u.getAccountId(),
-                        u.getFirstName(),
-                        u.getLastName(),
-                        u.getBalanceAmount()
-                ))
-                .collect(Collectors.toList());
-
-        return new ResponseCommon<>(SUCCESS_CODE,SUCCESS_MESSAGE,data);
+            return new ResponseCommon<>(SUCCESS_CODE,SUCCESS_MESSAGE,data);
+        }catch (Exception ex){
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 }

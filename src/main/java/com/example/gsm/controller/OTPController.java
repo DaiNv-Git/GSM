@@ -1,25 +1,21 @@
 package com.example.gsm.controller;
 
-
 import com.example.gsm.dao.*;
 import com.example.gsm.entity.ServiceEntity;
 import com.example.gsm.entity.repository.ServiceRepository;
 import com.example.gsm.repositories.OTPService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
 
+import static com.example.gsm.comon.Constants.CORE_ERROR_CODE;
 import static com.example.gsm.comon.Constants.SUCCESS_CODE;
 import static com.example.gsm.comon.Constants.SUCCESS_MESSAGE;
-
 
 @RestController
 @RequestMapping("/api/otp")
@@ -33,78 +29,110 @@ public class OTPController {
 
     @PostMapping("/overview")
     public ResponseCommon<OtpResponse> getOTPManager(@RequestBody OtpRequest req) {
-        return otpService.getOverview(req);
+        try {
+            return otpService.getOverview(req);
+        } catch (Exception ex) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 
     @PostMapping("/details")
     public ResponseCommon<OtpDetailsPagedResponse> getOTPDetails(@RequestBody OtpDetailsRequest req) {
-        return otpService.getOtpDetails(req);
+        try {
+            return otpService.getOtpDetails(req);
+        } catch (Exception ex) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 
     @GetMapping("/services/get-all")
     public ResponseCommon<List<ServiceEntity>> getAll() {
-        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.findAll());
+        try {
+            return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.findAll());
+        } catch (Exception ex) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 
     @GetMapping("/services/{id}")
     public ResponseCommon<?> getById(@PathVariable String id) {
-        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.findById(id));
+        try {
+            return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.findById(id));
+        } catch (Exception ex) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 
     @PostMapping("/services/create")
     public ResponseCommon<ServiceEntity> create(@RequestBody OtpServiceRequest req) {
-        ServiceEntity service = ServiceEntity.builder()
-                .code(req.getCode())
-                .text(req.getText())
-                .price(req.getPrice())
-                .image(req.getImage())
-                .invertLogo(req.isInvertLogo())
-                .isActive(req.isActive())
-                .isPrivate(req.isPrivate())
-                .pricePerDay(req.getPricePerDay())
-                .countryCode(req.getCountryCode())
-                .messageLimit(req.getMessageLimit())
-                .saleOffValue(req.getSaleOffValue())
-                .supportFeatures(req.getSupportFeatures())
-                .rentDurationPrices(req.getRentDurationPrices())
-                .createdAt(new Date())
-                .updatedAt(new Date())
-                .build();
+        try {
+            ServiceEntity service = ServiceEntity.builder()
+                    .code(req.getCode())
+                    .text(req.getText())
+                    .price(req.getPrice())
+                    .image(req.getImage())
+                    .invertLogo(req.isInvertLogo())
+                    .isActive(req.isActive())
+                    .isPrivate(req.isPrivate())
+                    .pricePerDay(req.getPricePerDay())
+                    .countryCode(req.getCountryCode())
+                    .messageLimit(req.getMessageLimit())
+                    .saleOffValue(req.getSaleOffValue())
+                    .supportFeatures(req.getSupportFeatures())
+                    .rentDurationPrices(req.getRentDurationPrices())
+                    .createdAt(new Date())
+                    .updatedAt(new Date())
+                    .build();
 
-        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.save(service));
+            return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.save(service));
+        } catch (Exception ex) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 
     @PutMapping("/services/update/{id}")
     public ResponseCommon<ServiceEntity> update(@PathVariable String id, @RequestBody OtpServiceRequest req) {
-        ServiceEntity service = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Service not found"));
+        try {
+            ServiceEntity service = repository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Service not found"));
 
-        service.setText(req.getText());
-        service.setPrice(req.getPrice());
-        service.setImage(req.getImage());
-        service.setInvertLogo(req.isInvertLogo());
-        service.setActive(req.isActive());
-        service.setPrivate(req.isPrivate());
-        service.setPricePerDay(req.getPricePerDay());
-        service.setCountryCode(req.getCountryCode());
-        service.setMessageLimit(req.getMessageLimit());
-        service.setSaleOffValue(req.getSaleOffValue());
-        service.setSupportFeatures(req.getSupportFeatures());
-        service.setRentDurationPrices(req.getRentDurationPrices());
-        service.setUpdatedAt(new Date());
+            service.setText(req.getText());
+            service.setPrice(req.getPrice());
+            service.setImage(req.getImage());
+            service.setInvertLogo(req.isInvertLogo());
+            service.setActive(req.isActive());
+            service.setPrivate(req.isPrivate());
+            service.setPricePerDay(req.getPricePerDay());
+            service.setCountryCode(req.getCountryCode());
+            service.setMessageLimit(req.getMessageLimit());
+            service.setSaleOffValue(req.getSaleOffValue());
+            service.setSupportFeatures(req.getSupportFeatures());
+            service.setRentDurationPrices(req.getRentDurationPrices());
+            service.setUpdatedAt(new Date());
 
-        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.save(service));
+            return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, repository.save(service));
+        } catch (Exception ex) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 
     @DeleteMapping("/services/delete/{id}")
     public ResponseCommon<?> delete(@PathVariable String id) {
-        repository.deleteById(id);
-        return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, null);
+        try {
+            repository.deleteById(id);
+            return new ResponseCommon<>(SUCCESS_CODE, SUCCESS_MESSAGE, null);
+        } catch (Exception ex) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 
     @GetMapping("/services/search-details")
     public ResponseCommon<?> searchByName(@RequestParam String name) {
-        return otpService.findServicesByAppName(name);
+        try {
+            return otpService.findServicesByAppName(name);
+        } catch (Exception ex) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 
     @GetMapping("/services/advanced-filter")
@@ -129,6 +157,10 @@ public class OTPController {
             @Parameter(description = "Thời gian tạo (12H, 24H, 48H, 72H)", example = "24H")
             @RequestParam(required = false) String timePeriod
     ) {
-        return otpService.advancedFilter(code, countryCode, isActive, isPrivate, smsSupport, callSupport, minPrice, maxPrice, timePeriod);
+        try {
+            return otpService.advancedFilter(code, countryCode, isActive, isPrivate, smsSupport, callSupport, minPrice, maxPrice, timePeriod);
+        } catch (Exception ex) {
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 }

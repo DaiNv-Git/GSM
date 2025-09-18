@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import static com.example.gsm.comon.Constants.CORE_ERROR_CODE;
 import static com.example.gsm.comon.Constants.SUCCESS_CODE;
 
 @RestController
@@ -24,6 +25,10 @@ public class ProxyController {
 
     @PostMapping("/overview")
     public ResponseCommon<RentResponse> getRentManager(@RequestBody RentRequest req) {
-        return rentService.getRent(req);
+        try{
+            return rentService.getRent(req);
+        }catch (Exception ex){
+            return new ResponseCommon<>(CORE_ERROR_CODE, ex.getMessage(), null);
+        }
     }
 }
