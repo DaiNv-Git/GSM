@@ -34,7 +34,6 @@ public class SimServiceImpl implements SimService {
             throw new IllegalArgumentException("JSON input cannot be null or empty");
         }
 
-        // 1. Parse JSON thành danh sách Sim + phone numbers
         Pair<List<Sim>, Set<String>> parsedData = parseIncomingSims(json);
         List<Sim> incomingSims = parsedData.getLeft();
         Set<String> phonesInRequest = parsedData.getRight();

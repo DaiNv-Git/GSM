@@ -8,13 +8,14 @@ import com.example.gsm.services.AuthService;
 import com.example.gsm.services.impl.UserAccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -68,4 +69,12 @@ public class UserAccountController {
         return ResponseEntity.ok(authService.refresh(request));
     }
 
+    @PostMapping("/deposit")
+    public ResponseEntity<UserAccount> deposit(@Valid @RequestBody DepositRequest request) {
+        log.info("API Deposit: accountId={}, amount={}", request.getAccountId(), request.getAmount());
+
+        UserAccount updatedUser = service.deposit(request.getAccountId(), request.getAmount());
+
+        return ResponseEntity.ok(updatedUser);
+    }
 }

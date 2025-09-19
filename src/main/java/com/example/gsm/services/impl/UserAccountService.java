@@ -7,14 +7,16 @@ import com.example.gsm.entity.UserAccount.WebInfo;
 import com.example.gsm.entity.repository.UserAccountRepository;
 import com.example.gsm.exceptions.BadRequestException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static com.example.gsm.exceptions.ErrorCode.USER_EXISTED;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserAccountService {
@@ -51,5 +53,27 @@ public class UserAccountService {
                 .build();
 
         return repository.save(ua);
+    }
+    public UserAccount deposit(Long accountId, Double amount) {
+        log.info("Depositing {} to accountId {}", amount, accountId);
+
+        Optional<UserAccount> user = repository.findByAccountId(accountId);
+        if (!user.isPresent()) {
+            throw new RuntimeException("User account not found");
+        }
+        UserAccount userAccount = user.get();
+        // Nếu balance null thì set 0 trước
+        if (userAccount.getBalanceAmount() == null) {
+            userAccount.setBalanceAmount(0.0);
+        }
+
+        double newBalance = userAccount.getBalanceAmount() + amount;
+        userAccount.setBalanceAmount(newBalance);
+        userAccount.setUpdatedAt(Instant.now());
+
+        UserAccount saved = repository.save(userAccount);
+
+        log.info("Deposited successfully. New balance: {}", saved.getBalanceAmount());
+        return saved;
     }
 }

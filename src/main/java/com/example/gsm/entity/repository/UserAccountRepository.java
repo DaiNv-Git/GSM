@@ -11,4 +11,5 @@ public interface UserAccountRepository extends MongoRepository<UserAccount, Stri
     boolean existsByWebInfoUsername(String username);
     Optional<UserAccount> findByAccountId(Long accountId);
 
+
 }
