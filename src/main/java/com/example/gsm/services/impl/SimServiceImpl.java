@@ -9,6 +9,8 @@ import com.mongodb.client.model.UpdateOneModel;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bson.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SimServiceImpl implements SimService {
+
+    private static final Logger log = LoggerFactory.getLogger(SimServiceImpl.class);
 
     private static final String DEFAULT_COUNTRY_CODE = "JPN";
 
@@ -38,7 +42,10 @@ public class SimServiceImpl implements SimService {
         List<Sim> incomingSims = parsedData.getLeft();
         Set<String> phonesInRequest = parsedData.getRight();
 
+        log.info("Received {} SIM(s) in request", incomingSims.size());
+
         if (incomingSims.isEmpty()) {
+            log.warn("No valid SIMs found in request, skipping.");
             return;
         }
 
@@ -52,40 +59,77 @@ public class SimServiceImpl implements SimService {
         bulkInsertAndUpdate(insertUpdate);
 
         // 5. Đánh dấu các sim không còn trong request thành replaced
-        markReplacedSims(phonesInRequest);
+        if (!phonesInRequest.isEmpty()) {
+            markReplacedSims(phonesInRequest);
+        }
     }
 
     // Parse JSON thành danh sách Sim + danh sách phone numbers
     private Pair<List<Sim>, Set<String>> parseIncomingSims(String json) throws Exception {
         JsonNode root = objectMapper.readTree(json);
 
-        String deviceName = root.path("device_name").asText("UnknownDevice");
+        // deviceName
+        String deviceName = root.path("device_name").asText(null);
+        if (deviceName == null || deviceName.isBlank()) {
+            deviceName = root.path("deviceName").asText("UnknownDevice");
+        }
+
+        // portData array
         JsonNode portDataArray = root.path("port_data");
+        if (portDataArray.isMissingNode() || !portDataArray.isArray()) {
+            portDataArray = root.path("portData");
+        }
         if (!portDataArray.isArray()) {
-            throw new IllegalArgumentException("port_data must be an array");
+            throw new IllegalArgumentException("port_data/portData must be an array");
         }
 
         List<Sim> incomingSims = new ArrayList<>();
         Set<String> phonesInRequest = new HashSet<>();
 
         for (JsonNode node : portDataArray) {
-            String phone = node.path("phone_number").asText(null);
+            // phone number
+            String phone = node.has("phone_number")
+                    ? node.path("phone_number").asText(null)
+                    : node.path("phoneNumber").asText(null);
+
             if (phone == null || phone.trim().isEmpty()) {
-                // bỏ qua nếu không có số điện thoại
                 continue;
             }
 
             phonesInRequest.add(phone);
 
+            // country code
+            String countryCode = node.has("country_code")
+                    ? node.path("country_code").asText(DEFAULT_COUNTRY_CODE)
+                    : node.path("countryCode").asText(DEFAULT_COUNTRY_CODE);
+
+            // comName / portName
+            String comName = node.has("com_name")
+                    ? node.path("com_name").asText("")
+                    : node.path("portName").asText("");
+
+            // simProvider
+            String simProvider = node.has("sim_provider")
+                    ? node.path("sim_provider").asText("")
+                    : node.path("simProvider").asText("");
+
+            // ccid
+            String ccid = node.path("ccid").asText("");
+
+            // content / message
+            String content = node.has("content")
+                    ? node.path("content").asText("")
+                    : node.path("message").asText("");
+
             incomingSims.add(Sim.builder()
                     .phoneNumber(phone)
-                    .countryCode(node.path("country_code").asText(DEFAULT_COUNTRY_CODE))
-                    .status("active") // mặc định active
+                    .countryCode(countryCode)
+                    .status("active")
                     .deviceName(deviceName)
-                    .comName(node.path("com_name").asText(""))
-                    .simProvider(node.path("sim_provider").asText(""))
-                    .ccid(node.path("ccid").asText(""))
-                    .content(node.path("content").asText(""))
+                    .comName(comName)
+                    .simProvider(simProvider)
+                    .ccid(ccid)
+                    .content(content)
                     .lastUpdated(new Date())
                     .build());
         }
@@ -113,7 +157,7 @@ public class SimServiceImpl implements SimService {
                 incoming.setStatus("active");
                 toInsert.add(incoming);
             } else {
-                // Có rồi (kể cả replaced) → update nếu có khác dữ liệu hoặc status replaced
+                // Có rồi (kể cả replaced) → update nếu khác dữ liệu hoặc status replaced
                 boolean needUpdate = isDataChanged(exist, incoming)
                         || "replaced".equalsIgnoreCase(exist.getStatus());
 
@@ -142,16 +186,17 @@ public class SimServiceImpl implements SimService {
     private void bulkInsertAndUpdate(InsertUpdateResult insertUpdate) {
         if (!insertUpdate.toInsert.isEmpty()) {
             mongoTemplate.insertAll(insertUpdate.toInsert);
+            log.info("Inserted {} new SIM(s)", insertUpdate.toInsert.size());
         }
         if (!insertUpdate.updates.isEmpty()) {
             mongoTemplate.getCollection("sims").bulkWrite(insertUpdate.updates);
+            log.info("Updated {} existing SIM(s)", insertUpdate.updates.size());
         }
     }
 
     // Đánh dấu các sim không còn trong request thành replaced
     private void markReplacedSims(Set<String> phonesInRequest) {
-        System.out.println("markReplacedSims: " + phonesInRequest);
-        // chỉ replace các sim đang active hoặc status khác replaced, không động vào sim mới đã insert
+        log.info("Marking replaced sims. Incoming phones count={}", phonesInRequest.size());
         Query query = new Query(Criteria.where("phoneNumber").nin(phonesInRequest)
                 .and("status").ne("replaced"));
         Update update = new Update().set("status", "replaced").set("lastUpdated", new Date());
@@ -182,5 +227,4 @@ public class SimServiceImpl implements SimService {
             this.updates = updates;
         }
     }
-
 }
