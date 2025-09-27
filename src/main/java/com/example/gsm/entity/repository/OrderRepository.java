@@ -13,8 +13,8 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends MongoRepository<Order, String> {
-    @Query(value = "{ 'stock': { $elemMatch: { 'phone': ?0, 'serviceCode': { $in: ?1 }, 'expiredAt': { $gt: ?2 } } } }", count = true)
-    long countByPhoneAndServiceCodesAndExpiredAtAfter(String phone, List<String> serviceCodes, Date now);
+    @Query(value = "{ 'stock': { $elemMatch: { 'phone': ?0, 'serviceCode': { $in: ?1 } } } }", count = true)
+    long countByPhoneAndServiceCodes(String phone, List<String> serviceCodes);
     Page<Order> findByAccountId(Long accountId, Pageable pageable);
 
     Page<Order> findByAccountIdAndStatusCode(Long accountId, String statusCode, Pageable pageable);
