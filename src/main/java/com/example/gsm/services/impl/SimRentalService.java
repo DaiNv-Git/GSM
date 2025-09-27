@@ -73,7 +73,7 @@ public class SimRentalService {
         sendWebSocketMessage(wsMessage);
 
         // 9. Sau 5 giây gửi OTP Mock
-        sendOtpMockAfterDelay(selectedSim, services, foundCountry);
+//        sendOtpMockAfterDelay(selectedSim, services, foundCountry);
 
         // 10. Trả về response
         return new RentSimResponse(
@@ -217,19 +217,19 @@ public class SimRentalService {
     }
 
     // Gửi OTP mock sau 5 giây
-    private void sendOtpMockAfterDelay(Sim selectedSim,
-                                       List<String> services,
-                                       Country foundCountry) {
-        new Thread(() -> {
-            try {
-                Thread.sleep(5000);
-                Map<String, Object> otpWsMessage = buildOtpWebSocketMessage(selectedSim, services, foundCountry);
-                messagingTemplate.convertAndSend("/topic/send-otp", otpWsMessage);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }).start();
-    }
+//    private void sendOtpMockAfterDelay(Sim selectedSim,
+//                                       List<String> services,
+//                                       Country foundCountry) {
+//        new Thread(() -> {
+//            try {
+//                Thread.sleep(5000);
+//                Map<String, Object> otpWsMessage = buildOtpWebSocketMessage(selectedSim, services, foundCountry);
+//                messagingTemplate.convertAndSend("/topic/send-otp", otpWsMessage);
+//            } catch (InterruptedException e) {
+//                Thread.currentThread().interrupt();
+//            }
+//        }).start();
+//    }
 
     // Lấy order theo nhóm type (giữ nguyên)
     public Map<String, List<Order>> getOrdersGroupedByType(Long accountId, int page, int size) {
