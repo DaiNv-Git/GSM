@@ -9,6 +9,7 @@ public interface SimRepository extends MongoRepository<Sim, String> {
     List<Sim> findByCountryCode(String CountryCode);
     List<Sim> findByPhoneNumber(String phonenumber);
     List<Sim> findByCountryCodeAndStatusOrderByRevenueDesc(String countryCode, String status);
+    List<Sim> findByCountryCodeAndStatusIgnoreCaseOrderByRevenueDesc(String countryCode, String status);
 
 
 }
