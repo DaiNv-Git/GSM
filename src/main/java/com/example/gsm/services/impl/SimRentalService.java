@@ -5,6 +5,7 @@ import com.example.gsm.dao.StatusCode;
 import com.example.gsm.entity.*;
 import com.example.gsm.entity.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Log4j
 public class SimRentalService {
 
     private final SimRepository simRepository;
@@ -40,52 +42,62 @@ public class SimRentalService {
                                    int rentDuration,
                                    List<String> services,
                                    String provider, String type) {
+        try {
+            // 1. Lấy user và check số dư
+            UserAccount user = getUserAccount(accountId, totalCost);
 
-        // 1. Lấy user và check số dư
-        UserAccount user = getUserAccount(accountId, totalCost);
+            // 2. Chọn SIM khả dụng
+            Sim selectedSim = selectAvailableSim(countryCode, services);
 
-        // 2. Chọn SIM khả dụng
-        Sim selectedSim = selectAvailableSim(countryCode, services);
+            // 3. Cập nhật số dư user
+            updateUserBalance(user, statusCode, totalCost);
 
-        // 3. Cập nhật số dư user
-        updateUserBalance(user, statusCode, totalCost);
+            // 4. Tạo Order
+            Order order = buildOrder(accountId, statusCode, flatform, countryCode, totalCost, rentDuration, services, provider, type, selectedSim);
 
-        // 4. Tạo Order
-        Order order = buildOrder(accountId, statusCode, flatform, countryCode, totalCost, rentDuration, services, provider, type, selectedSim);
+            // 5. Cập nhật doanh thu SIM
+            updateSimRevenue(selectedSim, statusCode, totalCost);
 
-        // 5. Cập nhật doanh thu SIM
-        updateSimRevenue(selectedSim, statusCode, totalCost);
+            // 6. Lấy thông tin country
+            Country foundCountry = countryRepository.findByCountryCode(countryCode)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy countryCode: " + countryCode));
 
-        // 6. Lấy thông tin country
-        Country foundCountry = countryRepository.findByCountryCode(countryCode)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy countryCode: " + countryCode));
+            // 7. Ghép tên dịch vụ
+            String combinedServiceNames = services.stream()
+                    .map(code -> serviceRepository.findByCode(code)
+                            .map(ServiceEntity::getText)
+                            .orElse("Không rõ dịch vụ"))
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("");
 
-        // 7. Ghép tên dịch vụ
-        String combinedServiceNames = services.stream()
-                .map(code -> serviceRepository.findByCode(code)
-                        .map(ServiceEntity::getText)
-                        .orElse("Không rõ dịch vụ"))
-                .reduce((a, b) -> a + ", " + b)
-                .orElse("");
+            // 8. Gửi WebSocket thông báo thuê SIM
+            Map<String, Object> wsMessage = buildWebSocketMessage(selectedSim, accountId, services, rentDuration, foundCountry);
+            sendWebSocketMessage(wsMessage);
 
-        // 8. Gửi WebSocket thông báo thuê SIM
-        Map<String, Object> wsMessage = buildWebSocketMessage(selectedSim, accountId, services, rentDuration, foundCountry);
-        sendWebSocketMessage(wsMessage);
+            // 9. (Tùy chọn) Sau 5 giây gửi OTP Mock
+            // sendOtpMockAfterDelay(selectedSim, services, foundCountry);
 
-        // 9. Sau 5 giây gửi OTP Mock
-//        sendOtpMockAfterDelay(selectedSim, services, foundCountry);
+            // 10. Trả về response
+            return new RentSimResponse(
+                    order.getId(),
+                    selectedSim.getPhoneNumber(),
+                    combinedServiceNames,
+                    String.join(",", services),
+                    foundCountry.getCountryName(),
+                    rentDuration,
+                    foundCountry.getCountryCode()
+            );
 
-        // 10. Trả về response
-        return new RentSimResponse(
-                order.getId(),
-                selectedSim.getPhoneNumber(),
-                combinedServiceNames,
-                String.join(",", services),
-                foundCountry.getCountryName(),
-                rentDuration,
-                foundCountry.getCountryCode()
-        );
+        } catch (RuntimeException ex) {
+            // log lỗi + rollback tự động nhờ @Transactional
+            System.out.println("❌ Lỗi khi thuê SIM: {}" + ex.getMessage());
+            throw ex; // vẫn ném ra để rollback
+        } catch (Exception ex) {
+            System.out.println("❌ Lỗi khi thuê SIM: {}" + ex.getMessage());
+            throw new RuntimeException("Đã xảy ra lỗi khi thuê SIM", ex);
+        }
     }
+
 
     // --------------------- PRIVATE METHODS ---------------------
 
@@ -100,16 +112,23 @@ public class SimRentalService {
     }
 
     private Sim selectAvailableSim(String countryCode, List<String> services) {
-        List<Sim> sims = simRepository.findByCountryCodeAndStatusIgnoreCaseOrderByRevenueDesc(countryCode,"ACTIVE");
+        List<Sim> sims = simRepository
+                .findByCountryCodeAndStatusIgnoreCaseOrderByRevenueDesc(countryCode, "ACTIVE");
+
         for (Sim sim : sims) {
-            long rented = orderRepository.countByPhoneAndServiceCodes(
-                    sim.getPhoneNumber(), services);
+            // Bỏ qua nếu phoneNumber null hoặc trống
+            if (sim.getPhoneNumber() == null || sim.getPhoneNumber().trim().isEmpty()) {
+                continue;
+            }
+            // Đếm số lần thuê SIM này với các serviceCodes trong thời gian hiện tại
+            long rented = orderRepository.countByPhoneAndServiceCodes(sim.getPhoneNumber(), services);
             if (rented <= 0) {
                 return sim;
             }
         }
-        throw new RuntimeException("Không còn sim khả dụng");
+        throw new RuntimeException("Không còn SIM khả dụng cho countryCode=" + countryCode);
     }
+
 
     private void updateUserBalance(UserAccount user, StatusCode statusCode, Double totalCost) {
         Double currentBalance = user.getBalanceAmount();
