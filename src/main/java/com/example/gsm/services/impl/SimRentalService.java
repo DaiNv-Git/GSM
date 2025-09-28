@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Log4j
 public class SimRentalService {
 
     private final SimRepository simRepository;
