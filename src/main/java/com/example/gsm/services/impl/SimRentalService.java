@@ -197,7 +197,6 @@ public class SimRentalService {
         simRepository.save(selectedSim);
     }
 
-    // WS message chính khi thuê SIM
     private Map<String, Object> buildWebSocketMessage(Sim selectedSim,
                                                       Long accountId,
                                                       List<String> services,
@@ -221,7 +220,6 @@ public class SimRentalService {
     private void sendWebSocketMessage(Map<String, Object> wsMessage) {
         messagingTemplate.convertAndSend("/topic/send-otp", wsMessage);
     }
-    // Lấy order theo nhóm type (giữ nguyên)
     public Map<String, List<Order>> getOrdersGroupedByType(Long accountId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Order> orderPage = orderRepository.findActiveOrders(accountId, new Date(), pageable);
