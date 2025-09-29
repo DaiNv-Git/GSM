@@ -210,7 +210,7 @@ public class SimRentalService {
         wsMessage.put("type", type);
         wsMessage.put("phoneNumber", selectedSim.getPhoneNumber());
         wsMessage.put("comNumber", selectedSim.getComName());
-        wsMessage.put("customerId", accountId);
+        wsMessage.put("accountId", accountId);
         wsMessage.put("serviceCode", String.join(",", services));
         wsMessage.put("waitingTime", rentDuration);
         wsMessage.put("countryName", foundCountry.getCountryCode());
