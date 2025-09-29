@@ -44,7 +44,8 @@ public class OTPRentalController {
                 req.getRentDuration(),
                 req.getServiceCodes(),
                 req.getProvider(),
-                req.getType()
+                req.getType(),
+                req.getQuantity()
         );
 
         return ResponseEntity.ok(resp);

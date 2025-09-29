@@ -10,10 +10,11 @@ import java.util.List;
 @AllArgsConstructor
 public class RentSimResponse {
     private String orderNumber;
-    private String phoneNumber;
+    private List<String> phoneNumbers;
     private String serviceName;
     private String serviceCode;
     private String countryName;
     private int rentDuration;
     private String countryCode;
+
 }

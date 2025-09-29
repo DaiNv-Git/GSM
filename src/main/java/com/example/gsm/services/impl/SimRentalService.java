@@ -40,24 +40,33 @@ public class SimRentalService {
                                    Double totalCost,
                                    int rentDuration,
                                    List<String> services,
-                                   String provider, String type) {
+                                   String provider,
+                                   String type,
+                                   int quantity) {
         try {
             // 1. Lấy user và check số dư
             UserAccount user = getUserAccount(accountId, totalCost);
 
-            // 2. Chọn SIM khả dụng
-            Sim selectedSim = selectAvailableSim(countryCode, services);
+            // 2. Chọn nhiều SIM khả dụng
+            List<Sim> selectedSims = selectAvailableSims(countryCode, services, quantity);
+
+            if (selectedSims.isEmpty()) {
+                throw new RuntimeException("Không đủ SIM khả dụng cho countryCode=" + countryCode);
+            }
 
             // 3. Cập nhật số dư user
             updateUserBalance(user, statusCode, totalCost);
 
-            // 4. Tạo Order
-            Order order = buildOrder(accountId, statusCode, flatform, countryCode, totalCost, rentDuration, services, provider, type, selectedSim);
+            // 4. Tạo Order (1 order chứa nhiều SIM)
+            Order order = buildBatchOrder(accountId, statusCode, flatform, countryCode,
+                    totalCost, rentDuration, services, provider, type, selectedSims);
 
-            // 5. Cập nhật doanh thu SIM
-            updateSimRevenue(selectedSim, statusCode, totalCost);
+            // 5. Cập nhật revenue cho từng SIM
+            for (Sim sim : selectedSims) {
+                updateSimRevenue(sim, statusCode, totalCost / quantity); // chia đều chi phí
+            }
 
-            // 6. Lấy thông tin country
+            // 6. Lấy country
             Country foundCountry = countryRepository.findByCountryCode(countryCode)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy countryCode: " + countryCode));
 
@@ -69,17 +78,16 @@ public class SimRentalService {
                     .reduce((a, b) -> a + ", " + b)
                     .orElse("");
 
-            // 8. Gửi WebSocket thông báo thuê SIM
-            Map<String, Object> wsMessage = buildWebSocketMessage(selectedSim, accountId, services, rentDuration, foundCountry);
-            sendWebSocketMessage(wsMessage);
+            // 8. Gửi WS cho từng SIM
+            for (Sim sim : selectedSims) {
+                Map<String, Object> wsMessage = buildWebSocketMessage(sim, accountId, services, rentDuration, order.getId(), foundCountry);
+                sendWebSocketMessage(wsMessage);
+            }
 
-            // 9. (Tùy chọn) Sau 5 giây gửi OTP Mock
-            // sendOtpMockAfterDelay(selectedSim, services, foundCountry);
-
-            // 10. Trả về response
+            List<String> phoneNumbers = selectedSims.stream().map(Sim::getPhoneNumber).toList();
             return new RentSimResponse(
                     order.getId(),
-                    selectedSim.getPhoneNumber(),
+                    phoneNumbers,
                     combinedServiceNames,
                     String.join(",", services),
                     foundCountry.getCountryName(),
@@ -87,13 +95,8 @@ public class SimRentalService {
                     foundCountry.getCountryCode()
             );
 
-        } catch (RuntimeException ex) {
-            // log lỗi + rollback tự động nhờ @Transactional
-            System.out.println("❌ Lỗi khi thuê SIM: {}" + ex.getMessage());
-            throw ex; // vẫn ném ra để rollback
         } catch (Exception ex) {
-            System.out.println("❌ Lỗi khi thuê SIM: {}" + ex.getMessage());
-            throw new RuntimeException("Đã xảy ra lỗi khi thuê SIM", ex);
+            throw new RuntimeException("❌ Lỗi khi thuê SIM: " + ex.getMessage(), ex);
         }
     }
 
@@ -110,45 +113,33 @@ public class SimRentalService {
         return user;
     }
 
-    private Sim selectAvailableSim(String countryCode, List<String> services) {
+    private List<Sim> selectAvailableSims(String countryCode, List<String> services, int quantity) {
         List<Sim> sims = simRepository
                 .findByCountryCodeAndStatusIgnoreCaseOrderByRevenueDesc(countryCode, "ACTIVE");
 
+        List<Sim> selected = new ArrayList<>();
         for (Sim sim : sims) {
-            // Bỏ qua nếu phoneNumber null hoặc trống
-            if (sim.getPhoneNumber() == null || sim.getPhoneNumber().trim().isEmpty()) {
-                continue;
-            }
-            // Đếm số lần thuê SIM này với các serviceCodes trong thời gian hiện tại
+            if (sim.getPhoneNumber() == null || sim.getPhoneNumber().isBlank()) continue;
+
             long rented = orderRepository.countByPhoneAndServiceCodes(sim.getPhoneNumber(), services);
             if (rented <= 0) {
-                return sim;
+                selected.add(sim);
+                if (selected.size() >= quantity) break;
             }
         }
-        throw new RuntimeException("Không còn SIM khả dụng cho countryCode=" + countryCode);
+        return selected;
     }
 
-
-    private void updateUserBalance(UserAccount user, StatusCode statusCode, Double totalCost) {
-        Double currentBalance = user.getBalanceAmount();
-        if (statusCode == StatusCode.SUCCESS) {
-            user.setBalanceAmount(currentBalance - totalCost);
-        } else if (statusCode == StatusCode.REFUNDED) {
-            user.setBalanceAmount(currentBalance + totalCost);
-        }
-        userAccountRepository.save(user);
-    }
-
-    private Order buildOrder(Long accountId,
-                             StatusCode statusCode,
-                             String flatform,
-                             String countryCode,
-                             Double totalCost,
-                             int rentDuration,
-                             List<String> services,
-                             String provider,
-                             String type,
-                             Sim selectedSim) {
+    private Order buildBatchOrder(Long accountId,
+                                  StatusCode statusCode,
+                                  String flatform,
+                                  String countryCode,
+                                  Double totalCost,
+                                  int rentDuration,
+                                  List<String> services,
+                                  String provider,
+                                  String type,
+                                  List<Sim> selectedSims) {
 
         Order order = new Order();
         order.setAccountId(accountId);
@@ -162,17 +153,32 @@ public class SimRentalService {
 
         long expiredMillis = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(rentDuration);
 
-        List<Order.Stock> stockList = services.stream().map(serviceCode -> {
-            Order.Stock stock = new Order.Stock();
-            stock.setPhone(selectedSim.getPhoneNumber());
-            stock.setServiceCode(serviceCode);
-            stock.setProvider(provider);
-            stock.setExpiredAt(new Date(expiredMillis));
-            return stock;
-        }).toList();
+        List<Order.Stock> stockList = new ArrayList<>();
+        for (Sim sim : selectedSims) {
+            for (String serviceCode : services) {
+                Order.Stock stock = new Order.Stock();
+                stock.setPhone(sim.getPhoneNumber());
+                stock.setServiceCode(serviceCode);
+                stock.setProvider(provider);
+                stock.setExpiredAt(new Date(expiredMillis));
+                stockList.add(stock);
+            }
+        }
 
         order.setStock(stockList);
         return orderRepository.save(order);
+    }
+
+
+
+    private void updateUserBalance(UserAccount user, StatusCode statusCode, Double totalCost) {
+        Double currentBalance = user.getBalanceAmount();
+        if (statusCode == StatusCode.SUCCESS) {
+            user.setBalanceAmount(currentBalance - totalCost);
+        } else if (statusCode == StatusCode.REFUNDED) {
+            user.setBalanceAmount(currentBalance + totalCost);
+        }
+        userAccountRepository.save(user);
     }
 
     private void updateSimRevenue(Sim selectedSim, StatusCode statusCode, Double totalCost) {
@@ -196,9 +202,11 @@ public class SimRentalService {
                                                       Long accountId,
                                                       List<String> services,
                                                       int rentDuration,
+                                                      String orderId,
                                                       Country foundCountry) {
         Map<String, Object> wsMessage = new HashMap<>();
         wsMessage.put("deviceName", selectedSim.getDeviceName());
+        wsMessage.put("orderId", selectedSim.getDeviceName());
         wsMessage.put("phoneNumber", selectedSim.getPhoneNumber());
         wsMessage.put("comNumber", selectedSim.getComName());
         wsMessage.put("customerId", accountId);

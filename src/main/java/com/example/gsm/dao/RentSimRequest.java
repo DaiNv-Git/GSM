@@ -12,5 +12,6 @@ public class RentSimRequest {
     private String provider;
     private String platForm;
     private StatusCode statusCode;
+    private int quantity;
     private List<String> serviceCodes;
 }

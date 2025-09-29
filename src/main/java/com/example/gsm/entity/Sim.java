@@ -26,7 +26,7 @@ public class Sim {
     /** Tổng doanh thu từ SIM này */
     private Double revenue;
 
-    /** Trạng thái SIM: active, inactive */
+    /** Trạng thái SIM: new,active, inactive */
     private String status;
 
     /** Mã quốc gia */
