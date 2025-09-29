@@ -30,7 +30,6 @@ public class SimRentalService {
     private final SimpMessagingTemplate messagingTemplate;
 
     // Số gửi cố định
-    private static final String FIXED_FROM_PHONE = "08016199112";
 
     @Transactional
     public RentSimResponse rentSim(Long accountId,
@@ -63,7 +62,7 @@ public class SimRentalService {
 
             // 5. Cập nhật revenue cho từng SIM
             for (Sim sim : selectedSims) {
-                updateSimRevenue(sim, statusCode, totalCost / quantity); // chia đều chi phí
+                updateSimRevenue(sim, statusCode, totalCost / quantity);
             }
 
             // 6. Lấy country
@@ -80,7 +79,8 @@ public class SimRentalService {
 
             // 8. Gửi WS cho từng SIM
             for (Sim sim : selectedSims) {
-                Map<String, Object> wsMessage = buildWebSocketMessage(sim, accountId, services, rentDuration, order.getId(), foundCountry);
+                Map<String, Object> wsMessage = buildWebSocketMessage(sim, accountId, services,
+                        rentDuration, order.getId(),type, foundCountry);
                 sendWebSocketMessage(wsMessage);
             }
 
@@ -203,10 +203,12 @@ public class SimRentalService {
                                                       List<String> services,
                                                       int rentDuration,
                                                       String orderId,
+                                                      String type,
                                                       Country foundCountry) {
         Map<String, Object> wsMessage = new HashMap<>();
         wsMessage.put("deviceName", selectedSim.getDeviceName());
         wsMessage.put("orderId", orderId);
+        wsMessage.put("type", type);
         wsMessage.put("phoneNumber", selectedSim.getPhoneNumber());
         wsMessage.put("comNumber", selectedSim.getComName());
         wsMessage.put("customerId", accountId);
@@ -219,44 +221,6 @@ public class SimRentalService {
     private void sendWebSocketMessage(Map<String, Object> wsMessage) {
         messagingTemplate.convertAndSend("/topic/send-otp", wsMessage);
     }
-
-    // WS message OTP mock
-    private Map<String, Object> buildOtpWebSocketMessage(Sim selectedSim,
-                                                         List<String> services,
-                                                         Country foundCountry) {
-        Map<String, Object> wsMessage = new HashMap<>();
-        // số gửi fix cứng
-        wsMessage.put("fromPhone", FIXED_FROM_PHONE);
-
-        // số nhận là sim order
-        wsMessage.put("toPhone", selectedSim.getPhoneNumber());
-        wsMessage.put("deviceName", selectedSim.getDeviceName());
-        wsMessage.put("serviceCode", String.join(",", services));
-        wsMessage.put("comNumber", "COM126");
-        wsMessage.put("countryName", foundCountry.getCountryCode());
-
-        String otp = String.format("%06d", new Random().nextInt(999999));
-        wsMessage.put("message", "Mã OTP cho dịch vụ " + String.join(",", services) + " là: " + otp);
-        wsMessage.put("waitingTime", 10);
-        wsMessage.put("timestamp", new Date());
-        return wsMessage;
-    }
-
-    // Gửi OTP mock sau 5 giây
-//    private void sendOtpMockAfterDelay(Sim selectedSim,
-//                                       List<String> services,
-//                                       Country foundCountry) {
-//        new Thread(() -> {
-//            try {
-//                Thread.sleep(5000);
-//                Map<String, Object> otpWsMessage = buildOtpWebSocketMessage(selectedSim, services, foundCountry);
-//                messagingTemplate.convertAndSend("/topic/send-otp", otpWsMessage);
-//            } catch (InterruptedException e) {
-//                Thread.currentThread().interrupt();
-//            }
-//        }).start();
-//    }
-
     // Lấy order theo nhóm type (giữ nguyên)
     public Map<String, List<Order>> getOrdersGroupedByType(Long accountId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
