@@ -206,7 +206,7 @@ public class SimRentalService {
                                                       Country foundCountry) {
         Map<String, Object> wsMessage = new HashMap<>();
         wsMessage.put("deviceName", selectedSim.getDeviceName());
-        wsMessage.put("orderId", selectedSim.getDeviceName());
+        wsMessage.put("orderId", orderId);
         wsMessage.put("phoneNumber", selectedSim.getPhoneNumber());
         wsMessage.put("comNumber", selectedSim.getComName());
         wsMessage.put("customerId", accountId);
