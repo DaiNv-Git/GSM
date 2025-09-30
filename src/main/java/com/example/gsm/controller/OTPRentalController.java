@@ -39,7 +39,6 @@ public class OTPRentalController {
         // service giờ trả về List
         List<RentSimResponse> respList = simRentalService.rentSim(
                 accountId,
-                req.getStatusCode(),
                 req.getPlatForm(),
                 req.getCountryCode(),
                 req.getTotalCost(),
@@ -72,5 +71,17 @@ public class OTPRentalController {
 
         return ResponseEntity.ok(groupedOrders);
     }
-    
+
+    @PostMapping("/order/{orderId}/success")
+    public ResponseEntity<Void> updateSuccess(@PathVariable String orderId) {
+        simRentalService.updateOrderSuccess(orderId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/order/{orderId}/refund")
+    public ResponseEntity<Void> updateRefund(@PathVariable String orderId) {
+        simRentalService.updateOrderRefund(orderId);
+        return ResponseEntity.ok().build();
+    }
+
 }

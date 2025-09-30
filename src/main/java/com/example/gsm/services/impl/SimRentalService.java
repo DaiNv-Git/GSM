@@ -33,7 +33,6 @@ public class SimRentalService {
      */
     @Transactional
     public List<RentSimResponse> rentSim(Long accountId,
-                                         StatusCode statusCode,
                                          String flatform,
                                          String countryCode,
                                          Double totalCost,
@@ -52,9 +51,8 @@ public class SimRentalService {
                 throw new RuntimeException("Không đủ SIM khả dụng cho countryCode=" + countryCode);
             }
 
-            // 3. Cập nhật số dư user
-            double costPerSim = totalCost / quantity;
-            updateUserBalance(user, statusCode, totalCost);
+            // 3. Trừ tiền ngay khi tạo order (PENDING)
+            updateUserBalance(user, StatusCode.SUCCESS, totalCost);
 
             // 4. Lấy country
             Country foundCountry = countryRepository.findByCountryCode(countryCode)
@@ -68,24 +66,18 @@ public class SimRentalService {
                     .reduce((a, b) -> a + ", " + b)
                     .orElse("");
 
-            // 6. Với mỗi SIM tạo 1 order riêng
+            // 6. Với mỗi SIM tạo 1 order riêng (PENDING) và gửi socket
             List<RentSimResponse> responses = new ArrayList<>();
+            double costPerSim = totalCost / quantity;
+
             for (Sim sim : selectedSims) {
-                // Tạo order trạng thái ban đầu = PENDING
+                // Tạo order trạng thái PENDING
                 Order order = buildSingleOrder(accountId, flatform, countryCode,
                         costPerSim, rentDuration, services, provider, type, sim);
 
-                // Sau khi xử lý xong cập nhật trạng thái thực tế
-                order.setStatusCode(statusCode.toString());
-                order.setUpdatedAt(new Date());
-                orderRepository.save(order);
-
-                // Cập nhật revenue cho sim
-                updateSimRevenue(sim, statusCode, costPerSim);
-
-                // Gửi WS cho sim
+                // Gửi WS ngay cả khi order đang PENDING
                 Map<String, Object> wsMessage = buildWebSocketMessage(sim, accountId, services,
-                        rentDuration, order.getId(), type, foundCountry);
+                        rentDuration, order.getId(), type, foundCountry, StatusCode.PENDING.toString());
                 sendWebSocketMessage(wsMessage);
 
                 responses.add(new RentSimResponse(
@@ -98,7 +90,6 @@ public class SimRentalService {
                         foundCountry.getCountryCode()
                 ));
             }
-
             return responses;
 
         } catch (Exception ex) {
@@ -152,6 +143,7 @@ public class SimRentalService {
         order.setCost(costPerSim);
         order.setCountryCode(countryCode);
 
+        // ✅ Ban đầu luôn PENDING
         order.setStatusCode(StatusCode.PENDING.toString());
 
         order.setCreatedAt(new Date());
@@ -205,7 +197,8 @@ public class SimRentalService {
                                                       int rentDuration,
                                                       String orderId,
                                                       String type,
-                                                      Country foundCountry) {
+                                                      Country foundCountry,
+                                                      String status) {
         Map<String, Object> wsMessage = new HashMap<>();
         wsMessage.put("deviceName", selectedSim.getDeviceName());
         wsMessage.put("orderId", orderId);
@@ -216,6 +209,7 @@ public class SimRentalService {
         wsMessage.put("serviceCode", String.join(",", services));
         wsMessage.put("waitingTime", rentDuration);
         wsMessage.put("countryName", foundCountry.getCountryCode());
+        wsMessage.put("status", status); // ✅ gửi thêm trạng thái order
         return wsMessage;
     }
 
@@ -223,7 +217,48 @@ public class SimRentalService {
         messagingTemplate.convertAndSend("/topic/send-otp", wsMessage);
     }
 
-    // --------------------- ORDERS GROUP ---------------------
+    // --------------------- UPDATE STATUS ---------------------
+
+    @Transactional
+    public void updateOrderSuccess(String orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy order"));
+
+        if (!StatusCode.PENDING.toString().equals(order.getStatusCode())) {
+            throw new RuntimeException("Chỉ cập nhật được order PENDING");
+        }
+
+        order.setStatusCode(StatusCode.SUCCESS.toString());
+        order.setUpdatedAt(new Date());
+        orderRepository.save(order);
+
+        // Cập nhật revenue cho từng SIM
+        for (Order.Stock stock : order.getStock()) {
+            Sim sim = simRepository.findByPhoneNumber(stock.getPhone())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy SIM: " + stock.getPhone()));
+            updateSimRevenue(sim, StatusCode.SUCCESS, order.getCost());
+        }
+    }
+
+    @Transactional
+    public void updateOrderRefund(String orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy order"));
+
+        if (!StatusCode.PENDING.toString().equals(order.getStatusCode())) {
+            throw new RuntimeException("Chỉ cập nhật được order PENDING");
+        }
+
+        order.setStatusCode(StatusCode.REFUNDED.toString());
+        order.setUpdatedAt(new Date());
+        orderRepository.save(order);
+
+        // Hoàn tiền cho user
+        UserAccount user = userAccountRepository.findByAccountId(order.getAccountId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
+        updateUserBalance(user, StatusCode.REFUNDED, order.getCost());
+    }
+
     public Map<String, List<Order>> getOrdersGroupedByType(Long accountId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Order> orderPage = orderRepository.findActiveOrders(accountId, new Date(), pageable);
@@ -258,4 +293,5 @@ public class SimRentalService {
         return sorted.stream()
                 .collect(Collectors.groupingBy(Order::getType, LinkedHashMap::new, Collectors.toList()));
     }
+
 }
