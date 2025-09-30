@@ -22,12 +22,13 @@ public class OTPRentalController {
 
     private final SimRentalService simRentalService;
     private final UserAccountRepository userAccountRepository;
-        @PostMapping("")
-    public ResponseEntity<RentSimResponse> rentSim(@RequestBody RentSimRequest req,
-                                                   Authentication authentication) {
-         if (authentication == null) {
-             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-         }
+    @PostMapping("")
+    public ResponseEntity<List<RentSimResponse>> rentSim(@RequestBody RentSimRequest req,
+                                                         Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         String username = (String) authentication.getPrincipal();
 
         UserAccount user = userAccountRepository.findByWebInfoUsername(username)
@@ -35,7 +36,8 @@ public class OTPRentalController {
 
         Long accountId = user.getAccountId();
 
-        RentSimResponse resp = simRentalService.rentSim(
+        // service giờ trả về List
+        List<RentSimResponse> respList = simRentalService.rentSim(
                 accountId,
                 req.getStatusCode(),
                 req.getPlatForm(),
@@ -48,8 +50,9 @@ public class OTPRentalController {
                 req.getQuantity()
         );
 
-        return ResponseEntity.ok(resp);
+        return ResponseEntity.ok(respList);
     }
+
 
     @GetMapping("/order")
     public ResponseEntity<Map<String, List<Order>>> getOrdersGroupedByType(Authentication authentication,
