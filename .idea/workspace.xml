@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="commit4">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/dao/response/SmsOrderDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/entity/repository/SmsOrderCustomRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/SmsOrderService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/SmsOrderServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/SmsMessageController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/SmsMessageController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/UserAccountController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/UserAccountController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/dao/UserMeResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/dao/UserMeResponse.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

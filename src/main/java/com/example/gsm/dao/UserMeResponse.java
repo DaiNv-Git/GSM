@@ -7,6 +7,7 @@ import java.util.List;
 @Data @Builder @AllArgsConstructor @NoArgsConstructor
 public class UserMeResponse {
     private String id;
+    private Long accountId;
     private String username;
     private String firstName;
     private String lastName;

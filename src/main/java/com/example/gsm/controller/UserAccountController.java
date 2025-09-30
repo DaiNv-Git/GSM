@@ -45,6 +45,7 @@ public class UserAccountController {
 
         var res = UserMeResponse.builder()
                 .id(user.getId())
+                .accountId(user.getAccountId())
                 .username(username)
                 .balanceAmount(user.getBalanceAmount())
                 .firstName(user.getFirstName())
