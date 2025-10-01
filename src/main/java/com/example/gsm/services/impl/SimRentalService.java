@@ -209,7 +209,7 @@ public class SimRentalService {
         wsMessage.put("serviceCode", String.join(",", services));
         wsMessage.put("waitingTime", rentDuration);
         wsMessage.put("countryName", foundCountry.getCountryCode());
-        wsMessage.put("status", status); // ✅ gửi thêm trạng thái order
+        wsMessage.put("status", status);
         return wsMessage;
     }
 
