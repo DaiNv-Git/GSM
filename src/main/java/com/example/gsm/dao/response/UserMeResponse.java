@@ -1,4 +1,4 @@
-package com.example.gsm.dao;
+package com.example.gsm.dao.response;
 
 import lombok.*;
 
@@ -14,7 +14,6 @@ public class UserMeResponse {
     private Double balanceAmount;
     private Boolean isActive;
     private List<String> roles;
-
     private boolean isDev;
     private boolean isAdmin;
     private boolean isPartner;

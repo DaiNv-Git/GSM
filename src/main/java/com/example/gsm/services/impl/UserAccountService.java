@@ -1,7 +1,7 @@
 package com.example.gsm.services.impl;
 
 import com.example.gsm.configurations.SequenceGeneratorService;
-import com.example.gsm.dao.RegisterUserRequest;
+import com.example.gsm.dao.request.RegisterUserRequest;
 import com.example.gsm.entity.UserAccount;
 import com.example.gsm.entity.UserAccount.WebInfo;
 import com.example.gsm.entity.repository.UserAccountRepository;

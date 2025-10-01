@@ -1,4 +1,4 @@
-package com.example.gsm.dao;
+package com.example.gsm.dao.request;
 import lombok.Data;
 
 @Data

@@ -15,11 +15,10 @@ import java.util.List;
 public interface OrderRepository extends MongoRepository<Order, String> {
     @Query(value = "{ 'stock': { $elemMatch: { 'phone': ?0, 'serviceCode': { $in: ?1 } } } }", count = true)
     long countByPhoneAndServiceCodes(String phone, List<String> serviceCodes);
-    Page<Order> findByAccountId(Long accountId, Pageable pageable);
 
-    Page<Order> findByAccountIdAndStatusCode(Long accountId, String statusCode, Pageable pageable);
-    @Query(value = "{ 'accountId': ?0, 'statusCode': 'PENDING', 'stock.expiredAt': { $gt: ?1 } }")
+    @Query(value = "{ 'accountId': ?0, 'stock.expiredAt': { $gt: ?1 } }")
     Page<Order> findActiveOrders(Long accountId, Date now, Pageable pageable);
+
     
 }
 

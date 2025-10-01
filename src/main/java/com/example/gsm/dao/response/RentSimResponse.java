@@ -1,4 +1,4 @@
-package com.example.gsm.dao;
+package com.example.gsm.dao.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

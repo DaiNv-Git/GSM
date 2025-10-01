@@ -1,6 +1,6 @@
 package com.example.gsm.services.impl;
 
-import com.example.gsm.dao.RentSimResponse;
+import com.example.gsm.dao.response.RentSimResponse;
 import com.example.gsm.dao.StatusCode;
 import com.example.gsm.entity.*;
 import com.example.gsm.entity.repository.*;

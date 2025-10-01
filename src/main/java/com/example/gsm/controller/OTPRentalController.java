@@ -1,7 +1,7 @@
 package com.example.gsm.controller;
 
-import com.example.gsm.dao.RentSimRequest;
-import com.example.gsm.dao.RentSimResponse;
+import com.example.gsm.dao.request.RentSimRequest;
+import com.example.gsm.dao.response.RentSimResponse;
 import com.example.gsm.entity.Order;
 import com.example.gsm.entity.UserAccount;
 import com.example.gsm.entity.repository.UserAccountRepository;

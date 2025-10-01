@@ -1,4 +1,5 @@
-package com.example.gsm.dao;
+package com.example.gsm.dao.request;
+import com.example.gsm.dao.StatusCode;
 import lombok.Data;
 
 import java.util.List;

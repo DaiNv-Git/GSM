@@ -1,4 +1,4 @@
-package com.example.gsm.dao;
+package com.example.gsm.dao.request;
 
 // Gửi đi: số điện thoại, customerId, mã quốc gia, mã dịch vụ
 import lombok.Data;

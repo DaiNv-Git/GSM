@@ -1,6 +1,6 @@
 package com.example.gsm.services.impl;
 
-import com.example.gsm.dao.CountryPriceDTO;
+import com.example.gsm.dao.response.CountryPriceDTO;
 import com.example.gsm.entity.Country;
 import com.example.gsm.entity.ServiceCountryPrice;
 import com.example.gsm.entity.ServiceEntity;

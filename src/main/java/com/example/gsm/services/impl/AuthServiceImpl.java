@@ -1,8 +1,8 @@
 package com.example.gsm.services.impl;
 
-import com.example.gsm.dao.LoginRequest;
-import com.example.gsm.dao.LoginResponse;
-import com.example.gsm.dao.RefreshRequest;
+import com.example.gsm.dao.request.LoginRequest;
+import com.example.gsm.dao.response.LoginResponse;
+import com.example.gsm.dao.request.RefreshRequest;
 import com.example.gsm.entity.UserAccount;
 import com.example.gsm.entity.repository.UserAccountRepository;
 import com.example.gsm.services.AuthService;
