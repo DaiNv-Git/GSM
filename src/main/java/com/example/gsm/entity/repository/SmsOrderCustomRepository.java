@@ -4,7 +4,6 @@ import com.example.gsm.dao.response.SmsOrderDTO;
 import com.example.gsm.entity.SmsMessage;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -51,21 +50,17 @@ public class SmsOrderCustomRepository {
                         .and("order.accountId").is(customerId)
         );
 
-        // Projection, dùng native Document để nhúng $regexFind
+        // Projection đầu tiên, nhúng $regexFind
         ProjectionOperation project = Aggregation.project()
                 .and("simPhone").as("phone")
                 .and("durationMinutes").as("durationMinutes")
                 .and("timestamp").as("timestamp")
                 .and("content").as("content")
                 .and("serviceCode").as("serviceCode")
-                // Trích OTP bằng regex
-                .and(context -> new Document("$regexFind",
-                        new Document("input", "$content")
-                                .append("regex", "[0-9]{4,8}")
-                ))
+                .and(RegexFindAggregationExpression.regexFind("content", "[0-9]{4,8}"))
                 .as("otpCodeObj");
 
-        // Thêm 1 projection để chỉ lấy phần match (otpCodeObj.match)
+        // Projection lần 2 để lấy field match ra ngoài
         ProjectionOperation projectOtp = Aggregation.project()
                 .and("phone").as("phone")
                 .and("durationMinutes").as("durationMinutes")
@@ -99,7 +94,7 @@ public class SmsOrderCustomRepository {
                 Aggregation.count().as("total")
         );
 
-        Long total = 0L;
+        long total = 0L;
         CountResult countResult = mongoTemplate
                 .aggregate(countAgg, SmsMessage.class, CountResult.class)
                 .getUniqueMappedResult();

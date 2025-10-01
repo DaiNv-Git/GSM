@@ -6,10 +6,10 @@ import java.time.Instant;
 
 @Data
 public class SmsOrderDTO {
-    private String phone;          // số điện thoại SIM
-    private int durationMinutes;   // thời gian thuê
-    private Instant timestamp;     // ngày nhận SMS
-    private String content;        // nội dung SMS
-    private String serviceCode;    // dịch vụ
-    private String otpCode;        // mã OTP trích từ content
+    private String phone;
+    private Integer durationMinutes;
+    private Instant timestamp;
+    private String content;
+    private String serviceCode;
+    private String otpCode; // sẽ nhận từ otpCodeObj.match
 }

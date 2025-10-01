@@ -5,8 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="commit4">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/entity/repository/RegexFindAggregationExpression.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/entity/Sim.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/entity/Sim.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/app.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/app.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/dao/response/SmsOrderDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/dao/response/SmsOrderDTO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/entity/repository/SmsOrderCustomRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/entity/repository/SmsOrderCustomRepository.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -383,7 +385,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759156528459</updated>
     </task>
-    <option name="localTasksCounter" value="41" />
+    <task id="LOCAL-00041" summary="commit4">
+      <option name="closed" value="true" />
+      <created>1759331869644</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1759331869644</updated>
+    </task>
+    <option name="localTasksCounter" value="42" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
