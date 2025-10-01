@@ -4,6 +4,7 @@ import com.example.gsm.dao.response.SmsOrderDTO;
 import com.example.gsm.entity.SmsMessage;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -28,52 +29,57 @@ public class SmsOrderCustomRepository {
             Instant to,
             Pageable pageable
     ) {
-        // Lọc SMS INBOX theo thời gian
+        // Lọc SMS INBOX theo thời gian + serviceType + accountId
         MatchOperation matchSms = Aggregation.match(
                 Criteria.where("type").is("INBOX")
                         .and("timestamp").gte(from).lte(to)
+                        .and("accountId").is(customerId)
         );
 
-        // Join với collection orders
-        LookupOperation lookupOrder = Aggregation.lookup(
-                "orders",       // collection orders
-                "orderId",      // field trong sms_messages
-                "id",           // field trong orders
-                "order"         // alias
-        );
+        // Join với orders theo orderId
+        LookupOperation lookupByOrderId = LookupOperation.newLookup()
+                .from("orders")
+                .localField("orderId")
+                .foreignField("id") // giả sử Order._id được map thành "id"
+                .as("orderById");
 
-        UnwindOperation unwind = Aggregation.unwind("order");
+        // Join với orders theo phone
+        LookupOperation lookupByPhone = LookupOperation.newLookup()
+                .from("orders")
+                .localField("simPhone")
+                .foreignField("stock.phone")
+                .as("orderByPhone");
 
-        // Lọc order theo type & accountId
-        MatchOperation matchOrder = Aggregation.match(
-                Criteria.where("order.type").is("buy.otp.service")
-                        .and("order.accountId").is(customerId)
-        );
-
-        // Projection đầu tiên, nhúng $regexFind
+        // Projection: chọn orderById nếu có, nếu null thì fallback sang orderByPhone
         ProjectionOperation project = Aggregation.project()
                 .and("simPhone").as("phone")
                 .and("durationMinutes").as("durationMinutes")
                 .and("timestamp").as("timestamp")
                 .and("content").as("content")
                 .and("serviceCode").as("serviceCode")
+                // OTP extract
                 .and(RegexFindAggregationExpression.regexFind("content", "[0-9]{4,8}"))
-                .as("otpCodeObj");
+                .as("otpCodeObj")
+                // Ưu tiên orderById, nếu null thì dùng orderByPhone
+                .and(
+                        ConditionalOperators.ifNull("orderById")
+                                .thenValueOf("orderByPhone")
+                ).as("order");
 
-        // Projection lần 2 để lấy field match ra ngoài
+        // Projection lần 2 để extract otpCode
         ProjectionOperation projectOtp = Aggregation.project()
                 .and("phone").as("phone")
                 .and("durationMinutes").as("durationMinutes")
                 .and("timestamp").as("timestamp")
                 .and("content").as("content")
                 .and("serviceCode").as("serviceCode")
-                .and("otpCodeObj.match").as("otpCode");
+                .and("otpCodeObj.match").as("otpCode")
+                .and("order").as("order");
 
         Aggregation aggregation = Aggregation.newAggregation(
                 matchSms,
-                lookupOrder,
-                unwind,
-                matchOrder,
+                lookupByOrderId,
+                lookupByPhone,
                 project,
                 projectOtp,
                 Aggregation.sort(Sort.by(Sort.Direction.DESC, "timestamp")),
@@ -88,9 +94,9 @@ public class SmsOrderCustomRepository {
         // Count query (không skip/limit)
         Aggregation countAgg = Aggregation.newAggregation(
                 matchSms,
-                lookupOrder,
-                unwind,
-                matchOrder,
+                lookupByOrderId,
+                lookupByPhone,
+                project,
                 Aggregation.count().as("total")
         );
 

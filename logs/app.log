@@ -1273,3 +1273,8 @@ This generated password is for development use only. Your security configuration
 	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
 	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
 
+2025-10-01 22:31:38 - INFO - o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-10-01 22:31:38 - INFO - o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-10-01 22:31:38 - INFO - o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-10-01 22:31:38 - INFO - o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@63d6f3c1]]
+2025-10-01 22:31:38 - INFO - o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.

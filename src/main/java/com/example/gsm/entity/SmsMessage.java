@@ -45,6 +45,8 @@ public class SmsMessage {
 
     /** Loại tin nhắn: INBOX / OUTBOX / OTP... */
     private String type;
+    
+    private String serviceType;
 
     /** Thời điểm lưu SMS */
     private Instant timestamp;
