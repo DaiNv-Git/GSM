@@ -24,7 +24,7 @@ public class Sim {
     private String phoneNumber;
 
     /** Tổng doanh thu từ SIM này */
-    private Double revenue;
+    private Double revenue =0.0;
 
     /** Trạng thái SIM: new,active, inactive */
     private String status;
