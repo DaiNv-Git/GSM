@@ -46,7 +46,8 @@ public class OTPRentalController {
                 req.getServiceCodes(),
                 req.getProvider(),
                 req.getType(),
-                req.getQuantity()
+                req.getQuantity(),
+                req.getRecord()
         );
 
         return ResponseEntity.ok(respList);
@@ -55,6 +56,7 @@ public class OTPRentalController {
 
     @GetMapping("/order")
     public ResponseEntity<Map<String, List<Order>>> getOrdersGroupedByType(Authentication authentication,
+                                                                           String phoneNumber,
                                                                            @RequestParam(defaultValue = "0") int page,
                                                                            @RequestParam(defaultValue = "10") int size) {
         // Lấy accountId từ Authentication
@@ -67,7 +69,7 @@ public class OTPRentalController {
 
         Long accountId = user.getAccountId();
 
-        Map<String, List<Order>> groupedOrders = simRentalService.getOrdersGroupedByType(accountId, page, size);
+        Map<String, List<Order>> groupedOrders = simRentalService.getOrdersGroupedByType(accountId,phoneNumber, page, size);
 
         return ResponseEntity.ok(groupedOrders);
     }

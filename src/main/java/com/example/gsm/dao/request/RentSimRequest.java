@@ -1,7 +1,6 @@
 package com.example.gsm.dao.request;
 import com.example.gsm.dao.StatusCode;
 import lombok.Data;
-
 import java.util.List;
 
 @Data
@@ -14,5 +13,6 @@ public class RentSimRequest {
     private String platForm;
     private StatusCode statusCode;
     private int quantity;
+    private Boolean record;
     private List<String> serviceCodes;
 }

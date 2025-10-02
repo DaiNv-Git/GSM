@@ -19,6 +19,8 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     @Query(value = "{ 'accountId': ?0, 'stock.expiredAt': { $gt: ?1 } }")
     Page<Order> findActiveOrders(Long accountId, Date now, Pageable pageable);
 
-    
+    @Query(value = "{ 'accountId': ?0, 'stock.expiredAt': { $gt: ?1 }, 'phoneNumber': { $regex: ?2, $options: 'i' } }")
+    Page<Order> findActiveOrdersByPhone(Long accountId, Date now, String phoneNumber, Pageable pageable);
+
 }
 
