@@ -57,9 +57,9 @@ public class OTPRentalController {
     @GetMapping("/order")
     public ResponseEntity<Map<String, List<Order>>> getOrdersGroupedByType(Authentication authentication,
                                                                            String phoneNumber,
+                                                                           String type,
                                                                            @RequestParam(defaultValue = "0") int page,
                                                                            @RequestParam(defaultValue = "10") int size) {
-        // Lấy accountId từ Authentication
         if (authentication == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -69,7 +69,7 @@ public class OTPRentalController {
 
         Long accountId = user.getAccountId();
 
-        Map<String, List<Order>> groupedOrders = simRentalService.getOrdersGroupedByType(accountId,phoneNumber, page, size);
+        Map<String, List<Order>> groupedOrders = simRentalService.getOrdersGroupedByType(accountId,phoneNumber,type,page, size);
 
         return ResponseEntity.ok(groupedOrders);
     }

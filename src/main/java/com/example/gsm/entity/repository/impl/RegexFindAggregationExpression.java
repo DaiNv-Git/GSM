@@ -1,4 +1,4 @@
-package com.example.gsm.entity.repository;
+package com.example.gsm.entity.repository.impl;
 
 import org.bson.Document;
 import org.springframework.data.mongodb.core.aggregation.AggregationExpression;

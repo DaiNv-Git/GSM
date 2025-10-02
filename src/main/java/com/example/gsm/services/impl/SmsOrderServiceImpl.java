@@ -1,7 +1,7 @@
 package com.example.gsm.services.impl;
 
 import com.example.gsm.dao.response.SmsOrderDTO;
-import com.example.gsm.entity.repository.SmsOrderCustomRepository;
+import com.example.gsm.entity.repository.impl.SmsOrderCustomRepository;
 import com.example.gsm.services.SmsOrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

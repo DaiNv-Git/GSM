@@ -4,6 +4,7 @@
     import com.example.gsm.dao.StatusCode;
     import com.example.gsm.entity.*;
     import com.example.gsm.entity.repository.*;
+    import com.example.gsm.entity.repository.impl.OrderCustomRepository;
     import lombok.RequiredArgsConstructor;
     import org.springframework.data.domain.Page;
     import org.springframework.data.domain.PageRequest;
@@ -22,6 +23,7 @@
     public class SimRentalService {
 
         private final SimRepository simRepository;
+        private final OrderCustomRepository orderCustomRepository;
         private final UserAccountRepository userAccountRepository;
         private final OrderRepository orderRepository;
         private final ServiceRepository serviceRepository;
@@ -260,9 +262,10 @@
             updateUserBalance(user, StatusCode.REFUNDED, order.getCost());
         }
 
-        public Map<String, List<Order>> getOrdersGroupedByType(Long accountId,String phoneNumber, int page, int size) {
+        public Map<String, List<Order>> getOrdersGroupedByType(Long accountId, String phoneNumber, String type, int page, int size) {
             Pageable pageable = PageRequest.of(page, size);
-            Page<Order> orderPage = orderRepository.findActiveOrdersByPhone(accountId,new Date(),phoneNumber, pageable);
+            Page<Order> orderPage = orderCustomRepository.findActiveOrders(accountId, new Date(), phoneNumber, type, pageable);
+
             Instant nowInstant = Instant.now();
 
             Comparator<Order> comparator = (o1, o2) -> {
