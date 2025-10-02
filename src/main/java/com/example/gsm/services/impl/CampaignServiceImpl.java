@@ -1,5 +1,6 @@
 package com.example.gsm.services.impl;
 
+import com.example.gsm.entity.PricingConfig;
 import com.example.gsm.entity.SmsCampaign;
 import com.example.gsm.entity.SmsMessageWsk;
 import com.example.gsm.entity.repository.SmsCampaignRepository;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -21,6 +23,16 @@ import java.util.UUID;
 public class CampaignServiceImpl implements CampaignService {
     private final SmsCampaignRepository campaignRepo;
     private final SmsMessageWskRepository messageRepo;
+
+    @Override
+    public List<SmsCampaign> findAll() {
+        return campaignRepo.findAll();
+    }
+
+    @Override
+    public SmsCampaign findById(String id) {
+        return campaignRepo.findById(id).orElse(null);
+    }
 
     @Override
     public String createCampaignFromExcel(

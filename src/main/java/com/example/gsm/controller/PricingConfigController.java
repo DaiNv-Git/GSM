@@ -15,30 +15,30 @@ public class PricingConfigController {
 
     private final PricingConfigService service;
 
-    @GetMapping
+    @GetMapping("/get-all")
     public ResponseEntity<List<PricingConfig>> getAll() {
         return ResponseEntity.ok(service.getAll());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/find/{id}")
     public ResponseEntity<PricingConfig> getById(@PathVariable String id) {
         return service.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<PricingConfig> create(@RequestBody PricingConfig config) {
         return ResponseEntity.ok(service.create(config));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<PricingConfig> update(@PathVariable String id,
                                                 @RequestBody PricingConfig updated) {
         return ResponseEntity.ok(service.update(id, updated));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

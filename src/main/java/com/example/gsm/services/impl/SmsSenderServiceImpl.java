@@ -29,8 +29,7 @@ public class SmsSenderServiceImpl {
     private final int batchSize = 100;
     private final String workerId = UUID.randomUUID().toString();
 
-    @Scheduled(fixedDelayString = "1000")
-    public void sendLoop() {
+    public void processBatch() {
         List<SmsMessageWsk> batch = claimService.claimBatch(batchSize, workerId);
         if (batch.isEmpty()) return;
 
