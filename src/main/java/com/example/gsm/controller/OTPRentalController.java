@@ -1,6 +1,7 @@
 package com.example.gsm.controller;
 
 import com.example.gsm.dao.request.RentSimRequest;
+import com.example.gsm.dao.response.OrderPageResponse;
 import com.example.gsm.dao.response.RentSimResponse;
 import com.example.gsm.entity.Order;
 import com.example.gsm.entity.UserAccount;
@@ -53,13 +54,14 @@ public class OTPRentalController {
         return ResponseEntity.ok(respList);
     }
 
-
     @GetMapping("/order")
-    public ResponseEntity<Map<String, List<Order>>> getOrdersGroupedByType(Authentication authentication,
-                                                                           String phoneNumber,
-                                                                           String type,
-                                                                           @RequestParam(defaultValue = "0") int page,
-                                                                           @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<OrderPageResponse> getOrdersGroupedByType(
+            Authentication authentication,
+            String phoneNumber,
+            String type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
         if (authentication == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -69,10 +71,11 @@ public class OTPRentalController {
 
         Long accountId = user.getAccountId();
 
-        Map<String, List<Order>> groupedOrders = simRentalService.getOrdersGroupedByType(accountId,phoneNumber,type,page, size);
+        OrderPageResponse response = simRentalService.getOrdersGroupedByType(accountId, phoneNumber, type, page, size);
 
-        return ResponseEntity.ok(groupedOrders);
+        return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/order/{orderId}/success")
     public ResponseEntity<Void> updateSuccess(@PathVariable String orderId) {

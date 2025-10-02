@@ -1,5 +1,6 @@
     package com.example.gsm.services.impl;
 
+    import com.example.gsm.dao.response.OrderPageResponse;
     import com.example.gsm.dao.response.RentSimResponse;
     import com.example.gsm.dao.StatusCode;
     import com.example.gsm.entity.*;
@@ -79,7 +80,7 @@
 
                     // Gửi WS ngay cả khi order đang PENDING
                     Map<String, Object> wsMessage = buildWebSocketMessage(sim, accountId, services,
-                            rentDuration, order.getId(), type, foundCountry, StatusCode.PENDING.toString(),record);
+                            rentDuration, order.getId(), type, foundCountry, StatusCode.PENDING.toString(), record);
                     sendWebSocketMessage(wsMessage);
 
                     responses.add(new RentSimResponse(
@@ -200,7 +201,7 @@
                                                           String orderId,
                                                           String type,
                                                           Country foundCountry,
-                                                          String status,Boolean record) {
+                                                          String status, Boolean record) {
             Map<String, Object> wsMessage = new HashMap<>();
             wsMessage.put("deviceName", selectedSim.getDeviceName());
             wsMessage.put("orderId", orderId);
@@ -262,7 +263,7 @@
             updateUserBalance(user, StatusCode.REFUNDED, order.getCost());
         }
 
-        public Map<String, List<Order>> getOrdersGroupedByType(Long accountId, String phoneNumber, String type, int page, int size) {
+        public OrderPageResponse getOrdersGroupedByType(Long accountId, String phoneNumber, String type, int page, int size) {
             Pageable pageable = PageRequest.of(page, size);
             Page<Order> orderPage = orderCustomRepository.findActiveOrders(accountId, new Date(), phoneNumber, type, pageable);
 
@@ -294,8 +295,9 @@
                     .sorted(comparator)
                     .collect(Collectors.toList());
 
-            return sorted.stream()
+            Map<String, List<Order>> grouped = sorted.stream()
                     .collect(Collectors.groupingBy(Order::getType, LinkedHashMap::new, Collectors.toList()));
-        }
 
+            return new OrderPageResponse(orderPage.getTotalElements(), orderPage.getTotalPages(), grouped);
+        }
     }
