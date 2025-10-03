@@ -70,18 +70,18 @@ public class SmsSenderServiceImpl {
                 msg.setUpdatedAt(LocalDateTime.now());
 
                 // Tạo job riêng cho tin nhắn này
-                Map<String, Object> job = Map.of(
-                        "action", "SEND_GSM_SMS",
-                        "jobId", jobId,
-                        "campaignId", campaignId,
-                        "country", country,
-                        "phoneNumber", msg.getPhoneNumber(),
-                        "content", msg.getContent(),
-                        "simId", sim.getId(),
-                        "simPhoneNumber", sim.getPhoneNumber(),
-                        "deviceName", sim.getDeviceName(),
-                        "comName", sim.getComName()
-                );
+                Map<String, Object> job = new HashMap<>();
+                job.put("action", "SEND_GSM_SMS");
+                job.put("jobId", jobId);
+                job.put("campaignId", campaignId);
+                job.put("country", country);
+                job.put("phoneNumber", msg.getPhoneNumber());
+                job.put("content", msg.getContent());
+                job.put("simId", sim.getId());
+                job.put("simPhoneNumber", sim.getPhoneNumber());
+                job.put("deviceName", sim.getDeviceName());
+                job.put("comName", sim.getComName());
+                job.put("localMsgId", msg.getLocalMsgId());
 
                 // Push job lên topic
                 messagingTemplate.convertAndSend("/topic/sms-job-topic", job);

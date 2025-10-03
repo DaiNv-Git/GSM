@@ -22,11 +22,23 @@ public class SmsGSMController {
     private final SimRepository simRepository;
     private final PricingConfigRepository pricingRepo;
     private final SimpMessagingTemplate messagingTemplate;
-    /** GSM client gửi kết quả gửi tin nhắn */
+
+    /** GSM client gửi kết quả gửi tin nhắn
+     * WAIT → khi BE mới tạo message, chưa gửi.
+     *
+     * PENDING → GSM Client đã nhận job nhưng chưa gửi.
+     *
+     * SENT → GSM đã gửi thành công ra mạng (chưa chắc người nhận nhận được).
+     *
+     * DELIVERED → mạng viễn thông báo nhận (DLR).
+     *
+     * FAILED → gửi lỗi (SIM lỗi, nội dung lỗi, số không hợp lệ, modem mất kết nối...).
+     * */
+
     @MessageMapping("/sms-response")
     public void handleResponse(Map<String, Object> response) {
         String localMsgId = (String) response.get("localMsgId");
-        String status = (String) response.get("status");
+        String status = (String) response.get("status");// WAIT | PENDING | SENT | DELIVERED | FAILED
         String errorMsg = (String) response.getOrDefault("errorMsg", null);
         String simId = (String) response.get("simId");
 
