@@ -291,7 +291,7 @@
                 return o2.getCreatedAt().compareTo(o1.getCreatedAt());
             };
 
-            List<Order> sorted = orderPage.getContent().stream()
+             List<Order> sorted = orderPage.getContent().stream()
                     .sorted(comparator)
                     .collect(Collectors.toList());
 
