@@ -15,6 +15,9 @@ spring:
   data:
     mongodb:
       uri: mongodb+srv://DevWork:DevWork@devwork.9mshdom.mongodb.net/JapanSim?retryWrites=true&w=majority&appName=JapanSim
+  web:
+    resources:
+      static-locations: file:/home/record/
 # application.yml
 springdoc:
   api-docs:
@@ -28,3 +31,4 @@ app:
     secret: "FxeXkZGX29XbExKcC8+b0KxeZDzF6Q5DWzIqenGvA5k="
     access-exp-ms: 600000         # 10 phút
     refresh-exp-ms: 604800000     # 7 ngày
+
