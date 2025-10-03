@@ -51,7 +51,7 @@ public class SimRentalService {
             // 1. Kiểm tra user và số dư
             UserAccount user = getUserAccount(accountId, totalCost);
 
-            // 2. Trừ tiền khi tạo order
+            // 2. Trừ tiền ngay khi tạo order
             updateUserBalance(user, StatusCode.SUCCESS, totalCost);
 
             Country foundCountry = countryRepository.findByCountryCode(countryCode)
@@ -59,52 +59,52 @@ public class SimRentalService {
 
             List<RentSimResponse> responses = new ArrayList<>();
 
-            // 3. Duyệt qua từng service để tạo order riêng
+            // 3. Duyệt từng service
             for (ServicePrice sp : services) {
                 String serviceCode = sp.getServiceCode();
                 Double price = sp.getPrice();
 
                 try {
-                    // chọn SIM cho service này
+                    // chọn SIM khả dụng cho service này
                     List<Sim> selectedSims = selectAvailableSims(countryCode,
                             Collections.singletonList(serviceCode), quantity);
+
                     if (selectedSims.isEmpty()) {
                         log.warn("⚠️ Không đủ SIM khả dụng cho serviceCode={}", serviceCode);
                         continue;
                     }
 
-                    // tạo order riêng cho service
-                    Order order = buildSingleOrder(accountId, flatform, countryCode,
-                            price, rentDuration, serviceCode, provider, type, selectedSims, record);
-
-                    // tên dịch vụ (để hiển thị FE)
                     String serviceName = serviceRepository.findByCode(serviceCode)
                             .map(ServiceEntity::getText)
                             .orElse(serviceCode);
 
-                    // gửi socket cho từng SIM
+                    // ✅ mỗi SIM tạo 1 order riêng
                     for (Sim sim : selectedSims) {
+                        Order order = buildSingleOrder(accountId, flatform, countryCode,
+                                price, rentDuration, serviceCode, provider, type, sim, record);
+
+                        // gửi socket cho SIM
                         Map<String, Object> wsMessage = buildWebSocketMessage(sim, accountId,
                                 Collections.singletonList(serviceCode), rentDuration, order.getId(),
                                 type, foundCountry, StatusCode.PENDING.toString(), record);
                         sendWebSocketMessage(wsMessage);
-                    }
 
-                    // add response cho FE
-                    responses.add(new RentSimResponse(
-                            order.getId(),
-                            selectedSims.stream().map(Sim::getPhoneNumber).collect(Collectors.toList()),
-                            serviceName,
-                            serviceCode,
-                            foundCountry.getCountryName(),
-                            rentDuration,
-                            foundCountry.getCountryCode(),
-                            price
-                    ));
+                        // add response cho FE
+                        responses.add(new RentSimResponse(
+                                order.getId(),
+                                List.of(sim.getPhoneNumber()),
+                                serviceName,
+                                serviceCode,
+                                foundCountry.getCountryName(),
+                                rentDuration,
+                                foundCountry.getCountryCode(),
+                                price
+                        ));
+                    }
 
                 } catch (Exception ex) {
                     log.error("❌ Lỗi khi xử lý serviceCode={}: {}", serviceCode, ex.getMessage(), ex);
-                    // bỏ qua service lỗi, vẫn tiếp tục service khác
+                    // bỏ qua service lỗi, tiếp tục service khác
                 }
             }
 
@@ -114,6 +114,7 @@ public class SimRentalService {
             throw new RuntimeException("❌ Lỗi khi thuê SIM: " + ex.getMessage(), ex);
         }
     }
+
 
     // --------------------- PRIVATE METHODS ---------------------
 
@@ -151,7 +152,7 @@ public class SimRentalService {
                                    String serviceCode,
                                    String provider,
                                    String type,
-                                   List<Sim> sims,
+                                   Sim sim,
                                    Boolean record) {
 
         Order order = new Order();
@@ -162,24 +163,21 @@ public class SimRentalService {
         order.setCountryCode(countryCode);
         order.setRecord(record);
 
-        // Ban đầu luôn PENDING
         order.setStatusCode(StatusCode.PENDING.toString());
         order.setCreatedAt(new Date());
         order.setUpdatedAt(new Date());
 
         long expiredMillis = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(rentDuration);
 
-        List<Order.Stock> stockList = new ArrayList<>();
-        for (Sim sim : sims) {
-            Order.Stock stock = new Order.Stock();
-            stock.setPhone(sim.getPhoneNumber());
-            stock.setServiceCode(serviceCode);
-            stock.setProvider(provider);
-            stock.setExpiredAt(new Date(expiredMillis));
-            stockList.add(stock);
-        }
+        // chỉ 1 sim -> 1 stock
+        Order.Stock stock = new Order.Stock();
+        stock.setPhone(sim.getPhoneNumber());
+        stock.setServiceCode(serviceCode);
+        stock.setProvider(provider);
+        stock.setExpiredAt(new Date(expiredMillis));
 
-        order.setStock(stockList);
+        order.setStock(Collections.singletonList(stock));
+
         return orderRepository.save(order);
     }
 
