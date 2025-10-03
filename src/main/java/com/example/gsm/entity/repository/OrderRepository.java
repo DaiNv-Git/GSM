@@ -20,6 +20,8 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     Page<Order> findByAccountIdAndStatusCode(Long accountId, String statusCode, Pageable pageable);
     @Query(value = "{ 'accountId': ?0, 'statusCode': 'SUCCESS', 'stock.expiredAt': { $gt: ?1 } }")
     Page<Order> findActiveOrders(Long accountId, Date now, Pageable pageable);
-    
+
+    @Query("{ 'stock': { $elemMatch: { 'phone': ?0, 'serviceCode': { $in: ?1 } } } }")
+    List<Order> findByPhoneAndServiceCodes(String phone, List<String> serviceCodes);
 }
 
