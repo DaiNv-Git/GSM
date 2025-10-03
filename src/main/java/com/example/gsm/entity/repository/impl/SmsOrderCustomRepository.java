@@ -2,7 +2,6 @@ package com.example.gsm.entity.repository.impl;
 
 import com.example.gsm.dao.response.SmsOrderDTO;
 import com.example.gsm.entity.SmsMessage;
-import com.example.gsm.entity.repository.impl.RegexFindAggregationExpression;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,6 +21,7 @@ import java.util.List;
 public class SmsOrderCustomRepository {
 
     private final MongoTemplate mongoTemplate;
+
     public Page<SmsOrderDTO> searchByCustomerAndDate(
             Long customerId,
             Instant from,
@@ -34,11 +34,12 @@ public class SmsOrderCustomRepository {
             type = "buy.otp.service";
         }
 
-        // Lọc SMS INBOX theo thời gian + accountId
+        // Lọc SMS INBOX theo thời gian + accountId + serviceType
         MatchOperation matchSms = Aggregation.match(
                 Criteria.where("type").is("INBOX")
                         .and("timestamp").gte(from).lte(to)
                         .and("accountId").is(customerId)
+                        .and("serviceType").is(type)   // dùng serviceType thay vì order.type
         );
 
         // Join với orders theo orderId
@@ -62,18 +63,16 @@ public class SmsOrderCustomRepository {
                 .and("timestamp").as("timestamp")
                 .and("content").as("content")
                 .and("serviceCode").as("serviceCode")
+                // extract OTP code
                 .and(RegexFindAggregationExpression.regexFind("content", "[0-9]{4,8}"))
                 .as("otpCodeObj")
+                // ưu tiên orderById, nếu null thì dùng orderByPhone
                 .and(
                         ConditionalOperators.ifNull("orderById")
                                 .thenValueOf("orderByPhone")
                 ).as("order");
 
-        // Filter orders theo type
-        MatchOperation matchOrderType = Aggregation.match(
-                Criteria.where("order.type").is(type)
-        );
-
+        // Projection lần 2 để lấy otpCode
         ProjectionOperation projectOtp = Aggregation.project()
                 .and("phone").as("phone")
                 .and("durationMinutes").as("durationMinutes")
@@ -83,12 +82,12 @@ public class SmsOrderCustomRepository {
                 .and("otpCodeObj.match").as("otpCode")
                 .and("order").as("order");
 
+        // Aggregation pipeline
         Aggregation aggregation = Aggregation.newAggregation(
                 matchSms,
                 lookupByOrderId,
                 lookupByPhone,
                 project,
-                matchOrderType,
                 projectOtp,
                 Aggregation.sort(Sort.by(Sort.Direction.DESC, "timestamp")),
                 Aggregation.skip(pageable.getOffset()),
@@ -99,13 +98,12 @@ public class SmsOrderCustomRepository {
                 .aggregate(aggregation, SmsMessage.class, SmsOrderDTO.class)
                 .getMappedResults();
 
-        // Count query
+        // Count query (không skip/limit)
         Aggregation countAgg = Aggregation.newAggregation(
                 matchSms,
                 lookupByOrderId,
                 lookupByPhone,
                 project,
-                matchOrderType,
                 Aggregation.count().as("total")
         );
 
