@@ -80,6 +80,7 @@ public class SmsMessageController {
 
             @Parameter(description = "Ngày kết thúc (yyyy-MM-dd). Bao gồm cả ngày này", example = "2025-09-02")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam String type,
 
             @Parameter(description = "Số trang (bắt đầu từ 0)", example = "0")
             @RequestParam(defaultValue = "0") int page,
@@ -90,7 +91,7 @@ public class SmsMessageController {
         Instant fromInstant = from.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant toInstant = to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
 
-        return smsOrderService.search(customerId, fromInstant, toInstant, PageRequest.of(page, size));
+        return smsOrderService.search(customerId, fromInstant, toInstant, type,PageRequest.of(page, size));
     }
 
 
