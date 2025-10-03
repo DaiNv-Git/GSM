@@ -15,8 +15,10 @@ import java.time.Instant;
 public class SmsOrderServiceImpl implements SmsOrderService {
     private final SmsOrderCustomRepository repository;
 
+
+
     @Override
-    public Page<SmsOrderDTO> search(Long customerId, Instant from, Instant to, Pageable pageable) {
-        return repository.searchByCustomerAndDate(customerId, from, to, pageable);
+    public Page<SmsOrderDTO> search(Long customerId, Instant from, Instant to,String type, Pageable pageable) {
+        return repository.searchByCustomerAndDate(customerId, from, to, type, pageable);
     }
 }

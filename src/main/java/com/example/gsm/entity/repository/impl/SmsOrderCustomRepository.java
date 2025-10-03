@@ -22,14 +22,19 @@ import java.util.List;
 public class SmsOrderCustomRepository {
 
     private final MongoTemplate mongoTemplate;
-
     public Page<SmsOrderDTO> searchByCustomerAndDate(
             Long customerId,
             Instant from,
             Instant to,
+            String type,
             Pageable pageable
     ) {
-        // Lọc SMS INBOX theo thời gian + serviceType + accountId
+        // default type = buy.otp.service
+        if (type == null || type.isBlank()) {
+            type = "buy.otp.service";
+        }
+
+        // Lọc SMS INBOX theo thời gian + accountId
         MatchOperation matchSms = Aggregation.match(
                 Criteria.where("type").is("INBOX")
                         .and("timestamp").gte(from).lte(to)
@@ -40,7 +45,7 @@ public class SmsOrderCustomRepository {
         LookupOperation lookupByOrderId = LookupOperation.newLookup()
                 .from("orders")
                 .localField("orderId")
-                .foreignField("id") // giả sử Order._id được map thành "id"
+                .foreignField("id")
                 .as("orderById");
 
         // Join với orders theo phone
@@ -57,16 +62,18 @@ public class SmsOrderCustomRepository {
                 .and("timestamp").as("timestamp")
                 .and("content").as("content")
                 .and("serviceCode").as("serviceCode")
-                // OTP extract
                 .and(RegexFindAggregationExpression.regexFind("content", "[0-9]{4,8}"))
                 .as("otpCodeObj")
-                // Ưu tiên orderById, nếu null thì dùng orderByPhone
                 .and(
                         ConditionalOperators.ifNull("orderById")
                                 .thenValueOf("orderByPhone")
                 ).as("order");
 
-        // Projection lần 2 để extract otpCode
+        // Filter orders theo type
+        MatchOperation matchOrderType = Aggregation.match(
+                Criteria.where("order.type").is(type)
+        );
+
         ProjectionOperation projectOtp = Aggregation.project()
                 .and("phone").as("phone")
                 .and("durationMinutes").as("durationMinutes")
@@ -81,6 +88,7 @@ public class SmsOrderCustomRepository {
                 lookupByOrderId,
                 lookupByPhone,
                 project,
+                matchOrderType,
                 projectOtp,
                 Aggregation.sort(Sort.by(Sort.Direction.DESC, "timestamp")),
                 Aggregation.skip(pageable.getOffset()),
@@ -91,12 +99,13 @@ public class SmsOrderCustomRepository {
                 .aggregate(aggregation, SmsMessage.class, SmsOrderDTO.class)
                 .getMappedResults();
 
-        // Count query (không skip/limit)
+        // Count query
         Aggregation countAgg = Aggregation.newAggregation(
                 matchSms,
                 lookupByOrderId,
                 lookupByPhone,
                 project,
+                matchOrderType,
                 Aggregation.count().as("total")
         );
 

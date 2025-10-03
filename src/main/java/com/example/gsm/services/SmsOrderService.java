@@ -7,5 +7,5 @@ import org.springframework.data.domain.Pageable;
 import java.time.Instant;
 
 public interface SmsOrderService {
-    Page<SmsOrderDTO> search(Long customerId, Instant from, Instant to, Pageable pageable) ;
+    Page<SmsOrderDTO> search(Long customerId, Instant from,Instant to, String type, Pageable pageable) ;
 }
