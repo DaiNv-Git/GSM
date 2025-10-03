@@ -1,11 +1,10 @@
 package com.example.gsm.services.impl;
 
 import com.example.gsm.entity.Sim;
+import com.example.gsm.entity.SmsCampaign;
 import com.example.gsm.entity.SmsMessageWsk;
-import com.example.gsm.entity.repository.OrderRepository;
-import com.example.gsm.entity.repository.SimRepository;
-import com.example.gsm.entity.repository.SmsCampaignRepository;
-import com.example.gsm.entity.repository.SmsMessageWskRepository;
+import com.example.gsm.entity.SmsSession;
+import com.example.gsm.entity.repository.*;
 import com.example.gsm.services.ClaimService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -27,6 +26,7 @@ public class SmsSenderServiceImpl {
     private final OrderRepository orderRepository;
     private final int batchSize = 100;
     private final String workerId = UUID.randomUUID().toString();
+    private final SmsSessionRepository smsSessionRepository;
 
     public void processBatch() {
         List<SmsMessageWsk> batch = claimService.claimBatch(batchSize, workerId);
@@ -41,7 +41,6 @@ public class SmsSenderServiceImpl {
 
             String jobId = UUID.randomUUID().toString();
             String campaignId = messages.get(0).getCampaignId();
-            String content = messages.get(0).getContent();
 
             // Lấy tất cả SIM active, sắp xếp giảm dần theo revenue, lọc expire
             List<Sim> availableSims = selectAvailableSims(country);
@@ -64,7 +63,32 @@ public class SmsSenderServiceImpl {
                 SmsMessageWsk msg = messages.get(i);
                 Sim sim = availableSims.get(i % simCount); // vòng tròn
 
-                // Cập nhật trạng thái
+                // Kiểm tra session active của sim
+                SmsSession session = smsSessionRepository.findActiveBySimId(sim.getId());
+
+                // lấy endTime từ campaign
+                SmsCampaign campaign = campaignRepo.findById(campaignId).orElseThrow();
+
+                if (session == null) {
+                    session = new SmsSession();
+                    session.setSimId(sim.getId());
+                    session.setCampaignId(campaignId);
+                    session.setDeviceName(sim.getDeviceName());
+                    session.setComPort(sim.getComName());
+                    session.setPhoneNumber(sim.getPhoneNumber());
+                    session.setStartTime(LocalDateTime.now());
+                    session.setEndTime(campaign.getEndTime());
+                    session.setActive(true);
+                    session.setLastActivityAt(LocalDateTime.now());
+                    smsSessionRepository.save(session);
+                } else {
+                    // update last activity vì có tin outbound mới
+                    session.setLastActivityAt(LocalDateTime.now());
+                    smsSessionRepository.save(session);
+                }
+
+                // Gắn sessionId cho message
+                msg.setChatSessionId(session.getId());
                 msg.setStatus("PENDING");
                 msg.setSentAt(LocalDateTime.now());
                 msg.setUpdatedAt(LocalDateTime.now());
@@ -82,6 +106,7 @@ public class SmsSenderServiceImpl {
                 job.put("deviceName", sim.getDeviceName());
                 job.put("comName", sim.getComName());
                 job.put("localMsgId", msg.getLocalMsgId());
+                job.put("sessionId", session.getId()); // 👈 thêm sessionId để GSM service track
 
                 // Push job lên topic
                 messagingTemplate.convertAndSend("/topic/sms-job-topic", job);

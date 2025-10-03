@@ -22,7 +22,7 @@ public class SmsGSMController {
     private final SimRepository simRepository;
     private final PricingConfigRepository pricingRepo;
     private final SimpMessagingTemplate messagingTemplate;
-
+    private final SmsCampaignRepository campaignRepo;
     /** GSM client gửi kết quả gửi tin nhắn
      * WAIT → khi BE mới tạo message, chưa gửi.
      *
@@ -35,10 +35,14 @@ public class SmsGSMController {
      * FAILED → gửi lỗi (SIM lỗi, nội dung lỗi, số không hợp lệ, modem mất kết nối...).
      * */
 
+
+    /**
+     * GSM phản hồi trạng thái tin nhắn (ACK)
+     */
     @MessageMapping("/sms-response")
     public void handleResponse(Map<String, Object> response) {
         String localMsgId = (String) response.get("localMsgId");
-        String status = (String) response.get("status");// WAIT | PENDING | SENT | DELIVERED | FAILED
+        String status = (String) response.get("status"); // WAIT | PENDING | SENT | DELIVERED | FAILED
         String errorMsg = (String) response.getOrDefault("errorMsg", null);
         String simId = (String) response.get("simId");
 
@@ -59,10 +63,10 @@ public class SmsGSMController {
                 simRepository.findById(simId).ifPresent(sim -> {
                     double oldRevenue = sim.getRevenue() != null ? sim.getRevenue() : 0.0;
 
-                    // Xác định loại SMS từ message (ONE_WAY / TWO_WAY)
+                    // Loại SMS
                     String smsType = "OUTBOUND".equalsIgnoreCase(msg.getDirection()) ? "ONE_WAY" : "TWO_WAY";
 
-                    // Lấy config giá theo loại
+                    // Giá theo config
                     PricingConfig pricing = pricingRepo
                             .findActivePricing(smsType, LocalDateTime.now())
                             .orElse(PricingConfig.builder()
@@ -71,10 +75,8 @@ public class SmsGSMController {
                                     .build());
 
                     if ("ONE_WAY".equalsIgnoreCase(smsType)) {
-                        // Logic: 1 chiều tính theo số tin outbound
                         sim.setRevenue(oldRevenue + pricing.getPricePerSms());
                     } else if ("TWO_WAY".equalsIgnoreCase(smsType) && msg.getChatSessionId() != null) {
-                        // Logic: 2 chiều tính theo thời gian session
                         sessionRepo.findById(msg.getChatSessionId()).ifPresent(session -> {
                             long minutes = Duration.between(session.getStartTime(), LocalDateTime.now()).toMinutes();
                             sim.setRevenue(oldRevenue + minutes * pricing.getPricePerMinute());
@@ -86,21 +88,23 @@ public class SmsGSMController {
                 });
             }
 
-            // Push realtime cho UI dashboard
+            // Push realtime FE
             messagingTemplate.convertAndSend("/topic/fe-updates", response);
-
-            // Push realtime cho UI chat (theo số điện thoại)
             messagingTemplate.convertAndSend("/topic/chat/" + msg.getPhoneNumber(), msg);
         });
     }
 
-    // Khi gửi SMS outbound : FE GỬI XUỐNG
+    /**
+     * FE gửi SMS outbound (2 chiều chat)
+     */
     @MessageMapping("/send-sms")
     public void sendSms(Map<String, Object> payload) {
         String phone = (String) payload.get("phoneNumber");
         String content = (String) payload.get("content");
         String campaignId = (String) payload.get("campaignId");
         String simId = (String) payload.get("simId");
+
+        SmsCampaign campaign = campaignRepo.findById(campaignId).orElse(null);
 
         // Tìm session active theo phone
         SmsSession session = sessionRepo.findByPhoneNumberAndIsActiveTrue(phone)
@@ -110,7 +114,8 @@ public class SmsGSMController {
                             .phoneNumber(phone)
                             .startTime(LocalDateTime.now())
                             .lastActivityAt(LocalDateTime.now())
-                            .isActive(true)
+                            .endTime(campaign != null ? campaign.getEndTime() : null)
+                            .active(true)
                             .build();
                     return sessionRepo.save(newSession);
                 });
@@ -131,30 +136,35 @@ public class SmsGSMController {
 
         messageRepo.save(msg);
 
-        Map<String,Object> job = Map.of(
-                "action", "SEND_SINGLE_SMS",
+        // Push job xuống GSM
+        Map<String, Object> job = Map.of(
+                "action", "SEND_GSM_SMS",
                 "localMsgId", msg.getLocalMsgId(),
                 "simId", simId,
-                "phone", phone,
-                "content", content
+                "phoneNumber", phone,
+                "content", content,
+                "campaignId", campaignId
         );
         messagingTemplate.convertAndSend("/topic/sms-job-topic", job);
         messagingTemplate.convertAndSend("/topic/chat/" + phone, msg);
     }
 
-    // Khi nhận SMS inbound : GSM CLIENT GỬI
+    /**
+     * GSM gửi inbound SMS
+     */
     @MessageMapping("/sms-inbound")
-    public void handleInbound(Map<String,Object> payload) {
+    public void handleInbound(Map<String, Object> payload) {
         String phone = (String) payload.get("phoneNumber");
         String content = (String) payload.get("content");
 
+        // Tìm session active theo phone
         SmsSession session = sessionRepo.findByPhoneNumberAndIsActiveTrue(phone)
                 .orElseGet(() -> {
                     SmsSession newSession = SmsSession.builder()
                             .phoneNumber(phone)
                             .startTime(LocalDateTime.now())
                             .lastActivityAt(LocalDateTime.now())
-                            .isActive(true)
+                            .active(true)
                             .build();
                     return sessionRepo.save(newSession);
                 });
@@ -172,6 +182,8 @@ public class SmsGSMController {
                 .build();
 
         messageRepo.save(inbound);
+
+        // Push realtime FE chat
         messagingTemplate.convertAndSend("/topic/chat/" + phone, inbound);
     }
 }

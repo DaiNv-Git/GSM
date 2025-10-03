@@ -17,10 +17,15 @@ import java.time.LocalDateTime;
 public class SmsSession {
     @Id private String id;
     private String campaignId;
+    private String simId;
+    private String deviceName;
+    private String comPort;
     private String phoneNumber;
+
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private boolean isActive;
+
+    private boolean active;
 
     // NEW: thời gian hoạt động gần nhất (khi có inbound/outbound SMS)
     private LocalDateTime lastActivityAt;

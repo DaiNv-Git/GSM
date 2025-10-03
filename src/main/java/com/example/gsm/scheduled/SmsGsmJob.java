@@ -26,9 +26,9 @@ public class SmsGsmJob {
     }
 
     /**
-     * Định kỳ quét session đang active và close nếu quá timeout
+     * Định kỳ quét session đang active và close nếu quá hạn.
      */
-    @Scheduled(fixedDelay = 60000) // mỗi phút
+    @Scheduled(fixedDelay = 600000) // mỗi 10 phút
     public void autoCloseExpiredSessions() {
         log.info("[SmsGsmJob] Start job autoCloseExpiredSessions...");
         smsSessionService.autoCloseExpiredSessions();

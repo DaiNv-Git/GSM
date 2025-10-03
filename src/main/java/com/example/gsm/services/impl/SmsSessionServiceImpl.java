@@ -5,6 +5,7 @@ import com.example.gsm.entity.repository.SmsSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,22 +17,25 @@ public class SmsSessionServiceImpl {
 
     private final SmsSessionRepository sessionRepo;
 
-    // Timeout cho session (5 phút)
-    private static final long SESSION_TIMEOUT_MINUTES = 5;
-
+    /**
+     * Đóng các session đã hết thời gian thuê
+     */
+    @Transactional
     public void autoCloseExpiredSessions() {
-        List<SmsSession> activeSessions = sessionRepo.findByIsActiveTrue();
-
         LocalDateTime now = LocalDateTime.now();
-        for (SmsSession session : activeSessions) {
-            if (session.getLastActivityAt() != null &&
-                    session.getLastActivityAt().plusMinutes(SESSION_TIMEOUT_MINUTES).isBefore(now)) {
-                session.setActive(false);
-                session.setEndTime(now);
-                sessionRepo.save(session);
-                log.info("Closed session {} for phone {} due to inactivity",
-                        session.getId(), session.getPhoneNumber());
-            }
+        log.info("[SmsSessionService] Auto closing expired sessions at {}", now);
+
+        List<SmsSession> expiredSessions = sessionRepo.findByIsActiveTrueAndEndTimeBefore(now);
+
+        for (SmsSession session : expiredSessions) {
+            session.setActive(false);
+            session.setEndTime(now); // chốt lại thời điểm kết thúc thực tế
+            log.info("Closed expired session id={} phone={}", session.getId(), session.getPhoneNumber());
+        }
+
+        if (!expiredSessions.isEmpty()) {
+            sessionRepo.saveAll(expiredSessions);
         }
     }
+
 }
