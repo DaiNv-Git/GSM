@@ -15,4 +15,5 @@ public class RentSimRequest {
     private int quantity;
     private Boolean record;
     private List<String> serviceCodes;
+    private List<ServicePrice> services;
 }

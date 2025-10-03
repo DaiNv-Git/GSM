@@ -44,7 +44,7 @@ public class OTPRentalController {
                 req.getCountryCode(),
                 req.getTotalCost(),
                 req.getRentDuration(),
-                req.getServiceCodes(),
+                req.getServices(),
                 req.getProvider(),
                 req.getType(),
                 req.getQuantity(),

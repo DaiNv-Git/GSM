@@ -27,6 +27,7 @@ public class Order {
     private String countryCode;
     private String statusCode;
     private String platform;
+    private Boolean record;
     private Integer __v;
 
     @Data
