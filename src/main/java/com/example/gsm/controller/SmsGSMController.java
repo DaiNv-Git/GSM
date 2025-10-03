@@ -107,7 +107,7 @@ public class SmsGSMController {
         SmsCampaign campaign = campaignRepo.findById(campaignId).orElse(null);
 
         // Tìm session active theo phone
-        SmsSession session = sessionRepo.findByPhoneNumberAndIsActiveTrue(phone)
+        SmsSession session = sessionRepo.findByPhoneNumberAndActiveTrue(phone)
                 .orElseGet(() -> {
                     SmsSession newSession = SmsSession.builder()
                             .campaignId(campaignId)
@@ -158,7 +158,7 @@ public class SmsGSMController {
         String content = (String) payload.get("content");
 
         // Tìm session active theo phone
-        SmsSession session = sessionRepo.findByPhoneNumberAndIsActiveTrue(phone)
+        SmsSession session = sessionRepo.findByPhoneNumberAndActiveTrue(phone)
                 .orElseGet(() -> {
                     SmsSession newSession = SmsSession.builder()
                             .phoneNumber(phone)

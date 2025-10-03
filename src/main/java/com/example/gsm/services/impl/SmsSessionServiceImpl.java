@@ -25,7 +25,7 @@ public class SmsSessionServiceImpl {
         LocalDateTime now = LocalDateTime.now();
         log.info("[SmsSessionService] Auto closing expired sessions at {}", now);
 
-        List<SmsSession> expiredSessions = sessionRepo.findByIsActiveTrueAndEndTimeBefore(now);
+        List<SmsSession> expiredSessions = sessionRepo.findByActiveTrueAndEndTimeBefore(now);
 
         for (SmsSession session : expiredSessions) {
             session.setActive(false);

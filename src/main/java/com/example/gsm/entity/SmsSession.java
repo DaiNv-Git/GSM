@@ -18,12 +18,14 @@ public class SmsSession {
     @Id private String id;
     private String campaignId;
     private String simId;
+    private String status;
     private String deviceName;
     private String comPort;
     private String phoneNumber;
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private LocalDateTime expiredAt;
 
     private boolean active;
 
