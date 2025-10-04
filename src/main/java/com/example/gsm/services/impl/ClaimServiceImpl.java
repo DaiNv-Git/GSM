@@ -40,20 +40,4 @@ public class ClaimServiceImpl implements ClaimService {
         }
         return claimed;
     }
-    public List<SmsMessageWsk> claimBatchCountry(int batchSize, String workerId, String countryCode) {
-        Query query = new Query(Criteria.where("status").is("WAIT")
-                .and("countryCode").is(countryCode));
-        query.limit(batchSize);
-        List<SmsMessageWsk> msgs = mongoTemplate.find(query, SmsMessageWsk.class);
-
-        // lock messages
-        msgs.forEach(m -> {
-            m.setLockedBy(workerId);
-            m.setLockedAt(LocalDateTime.now());
-            m.setStatus("SENDING");
-        });
-        messageRepo.saveAll(msgs);
-        return msgs;
-    }
-
 }

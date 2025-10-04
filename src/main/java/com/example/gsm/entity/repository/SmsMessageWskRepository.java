@@ -16,4 +16,5 @@ public interface SmsMessageWskRepository extends MongoRepository<SmsMessageWsk, 
 
     // Nếu muốn group theo session chat
     List<SmsMessageWsk> findByChatSessionIdOrderByCreatedAtAsc(String chatSessionId);
+    List<SmsMessageWsk> findByCampaignIdOrderByCreatedAtAsc(String campaignID);
 }

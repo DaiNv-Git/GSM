@@ -9,5 +9,6 @@ import java.util.Optional;
 public interface SimRepository extends MongoRepository<Sim, String> {
     List<Sim> findByCountryCodeAndStatusIgnoreCaseOrderByRevenueDesc(String countryCode, String status);
     Optional<Sim> findByPhoneNumber(String phoneNumber);
+    List<Sim> findAllByCountryCode(String country);
 
 }

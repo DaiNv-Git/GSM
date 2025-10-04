@@ -67,6 +67,14 @@ public class CampaignServiceImpl implements CampaignService {
         List<SmsMessageWsk> msgs = new ArrayList<>();
         List<UploadResponseDto> responseList = new ArrayList<>();
 
+        // lấy campaign để có country
+        SmsCampaign campaign = campaignRepo.findById(campaignId).orElse(null);
+        if (campaign == null) {
+            throw new IllegalArgumentException("❌ Không tìm thấy campaignId=" + campaignId);
+        }
+
+        String country = campaign.getCountry();
+
         for (String phone : phoneNumbers) {
             if (phone == null || phone.trim().isEmpty()) continue;
 
@@ -79,6 +87,7 @@ public class CampaignServiceImpl implements CampaignService {
                     .createdAt(LocalDateTime.now())
                     .localMsgId(UUID.randomUUID().toString())
                     .retryCount(0)
+                    .country(country) // ✅ set country từ campaign
                     .build();
 
             msgs.add(m);
@@ -88,17 +97,12 @@ public class CampaignServiceImpl implements CampaignService {
         messageRepo.saveAll(msgs);
 
         // update tổng số tin nhắn trong campaign
-        SmsCampaign campaign = campaignRepo.findById(campaignId).orElse(null);
-        if (campaign != null) {
-            int total = (campaign.getTotalMessages() != null ? campaign.getTotalMessages() : 0) + msgs.size();
-            campaign.setTotalMessages(total);
-            campaignRepo.save(campaign);
-        }
+        int total = (campaign.getTotalMessages() != null ? campaign.getTotalMessages() : 0) + msgs.size();
+        campaign.setTotalMessages(total);
+        campaignRepo.save(campaign);
 
         return responseList;
     }
-
-   
 
     private List<SmsMessageWsk> parseExcelFile(MultipartFile file, String campaignId, String content) throws IOException {
         List<SmsMessageWsk> out = new ArrayList<>();

@@ -9,4 +9,5 @@ public interface ChatHistoryService {
     List<SmsMessageWsk> getChatHistoryByPhone(String phoneNumber);
 
     List<SmsMessageWsk> getChatHistoryBySession(String sessionId) ;
+    List<SmsMessageWsk> getChatHistoryByCampaign(String campaignId) ;
 }

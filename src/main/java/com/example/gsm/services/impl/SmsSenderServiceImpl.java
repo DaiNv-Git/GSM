@@ -53,6 +53,7 @@ public class SmsSenderServiceImpl {
 
             // Lấy tất cả SIM active
             List<Sim> availableSims = selectAvailableSims(country);
+//            List<Sim> availableSims = simRepository.findAllByCountryCode(country);
             log.info("🔎 Found {} SIM active cho country={}", availableSims.size(), country);
 
             if (availableSims.isEmpty()) {
@@ -152,22 +153,22 @@ public class SmsSenderServiceImpl {
      * Lấy danh sách SIM active theo country, lọc SIM đã hết hạn order
      */
     private List<Sim> selectAvailableSims(String countryCode) {
-        List<Sim> sims = simRepository
+        return simRepository
                 .findByCountryCodeAndStatusIgnoreCaseOrderByRevenueDesc(countryCode, "ACTIVE");
 
-        Date now = new Date();
-        return sims.stream()
-                .filter(sim -> sim.getPhoneNumber() != null && !sim.getPhoneNumber().isBlank())
-                .filter(sim -> {
-                    // Kiểm tra xem SIM còn ít nhất 1 order SMS chưa expire
-                    boolean hasActiveOrder = orderRepository.findByPhoneAndServiceCodes(sim.getPhoneNumber(), List.of("SMS"))
-                            .stream()
-                            .filter(order -> order.getStock() != null)
-                            .flatMap(order -> order.getStock().stream())
-                            .anyMatch(stock -> stock.getExpiredAt() != null && stock.getExpiredAt().after(now));
-                    return hasActiveOrder;
-                })
-                .collect(Collectors.toList());
+//        Date now = new Date();
+//        return sims.stream()
+//                .filter(sim -> sim.getPhoneNumber() != null && !sim.getPhoneNumber().isBlank())
+//                .filter(sim -> {
+//                    // Kiểm tra xem SIM còn ít nhất 1 order SMS chưa expire
+//                    boolean hasActiveOrder = orderRepository.findByPhoneAndServiceCodes(sim.getPhoneNumber(), List.of("SMS"))
+//                            .stream()
+//                            .filter(order -> order.getStock() != null)
+//                            .flatMap(order -> order.getStock().stream())
+//                            .anyMatch(stock -> stock.getExpiredAt() != null && stock.getExpiredAt().after(now));
+//                    return hasActiveOrder;
+//                })
+//                .collect(Collectors.toList());
     }
 
 }

@@ -20,4 +20,8 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
     public List<SmsMessageWsk> getChatHistoryBySession(String sessionId) {
         return repository.findByChatSessionIdOrderByCreatedAtAsc(sessionId);
     }
+    @Override
+    public List<SmsMessageWsk> getChatHistoryByCampaign(String campaignId){
+        return repository.findByCampaignIdOrderByCreatedAtAsc(campaignId);
+    }
 }

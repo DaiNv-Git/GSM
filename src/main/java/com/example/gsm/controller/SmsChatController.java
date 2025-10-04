@@ -31,5 +31,11 @@ public class SmsChatController {
             @RequestParam String sessionId) {
         return ResponseEntity.ok(chatHistoryService.getChatHistoryBySession(sessionId));
     }
+
+    @GetMapping("/history/campaign")
+    public ResponseEntity<List<SmsMessageWsk>> getHistoryByCampaign(
+            @RequestParam String campaignId) {
+        return ResponseEntity.ok(chatHistoryService.getChatHistoryByCampaign(campaignId));
+    }
 }
 
