@@ -9,10 +9,11 @@ import java.util.List;
 
 
 public interface CampaignService {
+    List<SmsCampaign> findAll();
+    SmsCampaign findById(String id);
+    String create(SmsCampaign campaign);
+    SmsCampaign update(String id, SmsCampaign campaign);
+    boolean delete(String id);
 
-     List<SmsCampaign> findAll();
-
-     SmsCampaign findById(String id);
-
-    String createCampaignFromExcel(MultipartFile file, String name, String type, String content,String autoReply, LocalDateTime endTime,String country) throws IOException;
+    int addNumbersFromExcel(MultipartFile file, String campaignId, String content) throws IOException;
 }

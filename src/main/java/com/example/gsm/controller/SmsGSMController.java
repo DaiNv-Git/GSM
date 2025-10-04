@@ -39,16 +39,30 @@ public class SmsGSMController {
     /**
      * GSM phản hồi trạng thái tin nhắn (ACK)
      */
+
     @MessageMapping("/sms-response")
     public void handleResponse(Map<String, Object> response) {
         String localMsgId = (String) response.get("localMsgId");
         String status = (String) response.get("status"); // WAIT | PENDING | SENT | DELIVERED | FAILED
         String errorMsg = (String) response.getOrDefault("errorMsg", null);
         String simId = (String) response.get("simId");
+        String campaignId = (String) response.get("campaignId");
+        String sessionId = (String) response.get("sessionId");
+
+        // Validate bắt buộc
+//        if (localMsgId == null || localMsgId.isBlank() ||
+//                status == null || status.isBlank() ||
+//                simId == null || simId.isBlank() ||
+//                campaignId == null || campaignId.isBlank() ||
+//                sessionId == null || sessionId.isBlank()) {
+//            throw new IllegalArgumentException("Missing required fields in GSM response");
+//        }
 
         messageRepo.findByLocalMsgId(localMsgId).ifPresent(msg -> {
             msg.setStatus(status);
             msg.setUpdatedAt(LocalDateTime.now());
+            msg.setCampaignId(campaignId);   // ép luôn campaignId
+            msg.setChatSessionId(sessionId); // ép luôn sessionId
 
             if ("FAILED".equalsIgnoreCase(status)) {
                 msg.setErrorMsg(errorMsg);
@@ -88,11 +102,12 @@ public class SmsGSMController {
                 });
             }
 
-            // Push realtime FE
-            messagingTemplate.convertAndSend("/topic/fe-updates", response);
+            // Push realtime FE kèm đủ thông tin
+            messagingTemplate.convertAndSend("/topic/fe-updates", msg);
             messagingTemplate.convertAndSend("/topic/chat/" + msg.getPhoneNumber(), msg);
         });
     }
+
 
     /**
      * FE gửi SMS outbound (2 chiều chat)
@@ -102,12 +117,13 @@ public class SmsGSMController {
         String phone = (String) payload.get("phoneNumber");
         String content = (String) payload.get("content");
         String campaignId = (String) payload.get("campaignId");
+        String sessionId = (String) payload.get("sessionId");
         String simId = (String) payload.get("simId");
 
         SmsCampaign campaign = campaignRepo.findById(campaignId).orElse(null);
 
-        // Tìm session active theo phone
-        SmsSession session = sessionRepo.findByPhoneNumberAndActiveTrue(phone)
+        // Tìm session theo phone
+        SmsSession session = sessionRepo.findByCampaignIdAndPhoneNumber(campaignId, phone)
                 .orElseGet(() -> {
                     SmsSession newSession = SmsSession.builder()
                             .campaignId(campaignId)
@@ -120,7 +136,9 @@ public class SmsGSMController {
                     return sessionRepo.save(newSession);
                 });
 
+        // Update activity nếu session đã tồn tại
         session.setLastActivityAt(LocalDateTime.now());
+        session.setActive(true);
         sessionRepo.save(session);
 
         SmsMessageWsk msg = SmsMessageWsk.builder()
@@ -143,7 +161,8 @@ public class SmsGSMController {
                 "simId", simId,
                 "phoneNumber", phone,
                 "content", content,
-                "campaignId", campaignId
+                "campaignId", campaignId,
+                "sessionId", sessionId
         );
         messagingTemplate.convertAndSend("/topic/sms-job-topic", job);
         messagingTemplate.convertAndSend("/topic/chat/" + phone, msg);
@@ -156,20 +175,28 @@ public class SmsGSMController {
     public void handleInbound(Map<String, Object> payload) {
         String phone = (String) payload.get("phoneNumber");
         String content = (String) payload.get("content");
+        String campaignId = (String) payload.get("campaignId");
+        String sessionId = (String) payload.get("sessionId");
 
-        // Tìm session active theo phone
-        SmsSession session = sessionRepo.findByPhoneNumberAndActiveTrue(phone)
+        SmsCampaign campaign = campaignRepo.findById(campaignId).orElse(null);
+
+        //tìm session theo sessionId
+        SmsSession session = sessionRepo.findById(sessionId)
                 .orElseGet(() -> {
                     SmsSession newSession = SmsSession.builder()
+                            .campaignId(campaignId)
                             .phoneNumber(phone)
                             .startTime(LocalDateTime.now())
                             .lastActivityAt(LocalDateTime.now())
+                            .endTime(campaign != null ? campaign.getEndTime() : null)
                             .active(true)
                             .build();
                     return sessionRepo.save(newSession);
                 });
 
+        // Update activity nếu session đã tồn tại
         session.setLastActivityAt(LocalDateTime.now());
+        session.setActive(true);
         sessionRepo.save(session);
 
         SmsMessageWsk inbound = SmsMessageWsk.builder()
@@ -179,6 +206,7 @@ public class SmsGSMController {
                 .status("DELIVERED")
                 .createdAt(LocalDateTime.now())
                 .chatSessionId(session.getId())
+                .campaignId(campaignId)
                 .build();
 
         messageRepo.save(inbound);

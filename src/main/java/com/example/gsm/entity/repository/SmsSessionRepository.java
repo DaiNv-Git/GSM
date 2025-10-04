@@ -18,5 +18,8 @@ public interface SmsSessionRepository extends MongoRepository<SmsSession, String
     List<SmsSession> findByStatusAndExpiredAtBefore(String status, LocalDateTime time);
     List<SmsSession> findByActiveTrueAndEndTimeBefore(LocalDateTime now);
     SmsSession findActiveBySimId(String simId);
+    List<SmsSession> findByCampaignId(String campaignId);
+    Optional<SmsSession> findByCampaignIdAndPhoneNumber(String campaignId, String phoneNumber);
+
 
 }
