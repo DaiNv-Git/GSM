@@ -3,10 +3,8 @@ package com.example.gsm.services.impl;
 import com.example.gsm.entity.PricingConfig;
 import com.example.gsm.entity.SmsCampaign;
 import com.example.gsm.entity.SmsMessageWsk;
-import com.example.gsm.entity.SmsSession;
 import com.example.gsm.entity.repository.SmsCampaignRepository;
 import com.example.gsm.entity.repository.SmsMessageWskRepository;
-import com.example.gsm.entity.repository.SmsSessionRepository;
 import com.example.gsm.services.CampaignService;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
@@ -24,7 +22,6 @@ import java.util.UUID;
 public class CampaignServiceImpl implements CampaignService {
     private final SmsCampaignRepository campaignRepo;
     private final SmsMessageWskRepository messageRepo;
-    private final SmsSessionRepository sessionRepo;
 
     @Override
     public List<SmsCampaign> findAll() {
@@ -66,10 +63,28 @@ public class CampaignServiceImpl implements CampaignService {
     }
 
     @Override
-    public List<SmsSession> addNumbersFromExcel(MultipartFile file, String campaignId, String content) throws IOException {
-        List<SmsMessageWsk> msgs = parseExcelFile(file, campaignId, content);
+    public int addNumbers(List<String> phoneNumbers, String campaignId, String content) throws IOException {
+        List<SmsMessageWsk> msgs = new ArrayList<>();
+
+        for (String phone : phoneNumbers) {
+            if (phone == null || phone.trim().isEmpty()) continue;
+
+            SmsMessageWsk m = SmsMessageWsk.builder()
+                    .campaignId(campaignId)
+                    .phoneNumber(phone.trim())
+                    .content(content)
+                    .direction("OUTBOUND")
+                    .status("WAIT")
+                    .createdAt(LocalDateTime.now())
+                    .localMsgId(UUID.randomUUID().toString())
+                    .retryCount(0)
+                    .build();
+            msgs.add(m);
+        }
+
         messageRepo.saveAll(msgs);
 
+        // update tổng số tin nhắn trong campaign
         SmsCampaign campaign = campaignRepo.findById(campaignId).orElse(null);
         if (campaign != null) {
             int total = (campaign.getTotalMessages() != null ? campaign.getTotalMessages() : 0) + msgs.size();
@@ -77,31 +92,9 @@ public class CampaignServiceImpl implements CampaignService {
             campaignRepo.save(campaign);
         }
 
-        // ✅ Tạo session cho mỗi số điện thoại
-        List<SmsSession> sessions = new ArrayList<>();
-        for (SmsMessageWsk m : msgs) {
-            sessionRepo.findByCampaignIdAndPhoneNumber(campaignId, m.getPhoneNumber())
-                    .ifPresentOrElse(
-                            sessions::add,
-                            () -> {
-                                SmsSession newSession = SmsSession.builder()
-                                        .campaignId(campaignId)
-                                        .phoneNumber(m.getPhoneNumber())
-                                        .startTime(LocalDateTime.now())
-                                        .status("ACTIVE")
-                                        .build();
-                                sessions.add(sessionRepo.save(newSession));
-
-                                // ép lại msg gắn sessionId
-                                m.setChatSessionId(newSession.getId());
-                                messageRepo.save(m);
-                            }
-                    );
-        }
-
-        return sessions;
+        return msgs.size();
     }
-
+   
 
     private List<SmsMessageWsk> parseExcelFile(MultipartFile file, String campaignId, String content) throws IOException {
         List<SmsMessageWsk> out = new ArrayList<>();

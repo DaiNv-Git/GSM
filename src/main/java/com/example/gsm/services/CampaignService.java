@@ -1,7 +1,6 @@
 package com.example.gsm.services;
 
 import com.example.gsm.entity.SmsCampaign;
-import com.example.gsm.entity.SmsSession;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -16,6 +15,6 @@ public interface CampaignService {
     SmsCampaign update(String id, SmsCampaign campaign);
     boolean delete(String id);
 
-//    int addNumbersFromExcel(MultipartFile file, String campaignId, String content) throws IOException;
-     List<SmsSession> addNumbersFromExcel(MultipartFile file, String campaignId, String content) throws IOException ;
+    int addNumbers(List<String> phoneNumbers, String campaignId, String content) throws IOException;
+
 }

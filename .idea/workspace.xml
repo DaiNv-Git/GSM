@@ -5,11 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="add cosum">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/dao/request/PhoneUploadRequest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/CallRecordController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/CallRecordController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/entity/repository/CallRecordRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/entity/repository/CallRecordRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/CallRecordService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/CallRecordService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/CallRecordServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/CallRecordServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/CampaignController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/CampaignController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/scheduled/SmsGsmJob.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/scheduled/SmsGsmJob.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/CampaignService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/CampaignService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/CampaignServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/CampaignServiceImpl.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,9 +60,13 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "Spring Boot.GsmApplication.executor": "Run",
-    "git-widget-placeholder": "main",
+    "Spring Boot.GsmApplication.executor": "Debug",
+    "git-widget-placeholder": "Rebasing ST",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",

@@ -20,9 +20,7 @@ public class SmsGsmJob {
      */
     @Scheduled(fixedDelayString = "1000")
     public void sendSmsGsm() {
-        log.info("[SmsGsmJob] Start job sendSmsGsm...");
         smsSenderService.processBatch();
-        log.info("[SmsGsmJob] End job sendSmsGsm.");
     }
 
     /**

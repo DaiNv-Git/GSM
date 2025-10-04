@@ -1,15 +1,14 @@
 package com.example.gsm.controller;
 
+import com.example.gsm.dao.request.PhoneUploadRequest;
 import com.example.gsm.entity.SmsCampaign;
 import com.example.gsm.entity.SmsSession;
 import com.example.gsm.entity.repository.SmsSessionRepository;
 import com.example.gsm.services.CampaignService;
 import lombok.RequiredArgsConstructor;
-import org.apache.tika.Tika;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,12 +47,12 @@ public class CampaignController {
         return ResponseEntity.ok(Map.of("message", "Xóa thành công"));
     }
 
-    @GetMapping("/get-all")
+    @GetMapping("/all")
     public ResponseEntity<?> findAllCampaigns() {
         return ResponseEntity.ok(campaignService.findAll());
     }
 
-    @GetMapping("/find/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> findCampaignById(@PathVariable String id) {
         var campaign = campaignService.findById(id);
         if (campaign == null) {
@@ -62,48 +61,32 @@ public class CampaignController {
         return ResponseEntity.ok(campaign);
     }
 
-    // ✅ Upload file Excel -> add số điện thoại vào campaign đã có
+    // ✅ Upload danh sách số điện thoại (JSON array)
     @PostMapping(
-            value = "/upload",
-            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
+            value = "/upload"
     )
-    public ResponseEntity<?> uploadNumbersToCampaign(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("campaignId") String campaignId,
-            @RequestParam("content") String content
-    ) throws IOException {
-        // Check kích thước file
-        long maxSize = 10 * 1024 * 1024;  //10MB
-        if (file.getSize() > maxSize) {
-            return ResponseEntity.badRequest().body(Map.of("error", "File quá lớn. Kích thước tối đa 10MB"));
+    public ResponseEntity<?> uploadNumbersToCampaign(@RequestBody PhoneUploadRequest request) throws IOException {
+
+        if (request.getPhoneNumbers() == null || request.getPhoneNumbers().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Danh sách số điện thoại trống"));
         }
 
-        String filename = file.getOriginalFilename();
-        String mimeType = new Tika().detect(file.getInputStream());
+        int total = campaignService.addNumbers(
+                request.getPhoneNumbers(),
+                request.getCampaignId(),
+                request.getContent()
+        );
 
-        boolean isExcelMime = mimeType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                || mimeType.equals("application/vnd.ms-excel")
-                || mimeType.equals("application/x-tika-ooxml")
-                || mimeType.equals("application/zip"); // fallback cho .xlsx bị nhận sai
-
-        boolean isExcelExt = filename.endsWith(".xls") || filename.endsWith(".xlsx");
-
-        if (!(isExcelMime && isExcelExt)) {
-            return ResponseEntity.badRequest().body(Map.of("error", "File không hợp lệ, không phải Excel"));
-        }
-
-//        int total = campaignService.addNumbersFromExcel(file, campaignId, content);
-        List<SmsSession> sessions = campaignService.addNumbersFromExcel(file, campaignId, content);
         return ResponseEntity.ok(Map.of(
-                "campaignId", campaignId,
-                "totalSessions", sessions.size(),
-                "sessions", sessions
+                "campaignId", request.getCampaignId(),
+                "addedMessages", total
         ));
     }
 
-    // ✅ Lấy session theo campaign
-    @GetMapping("/get-all-sessions")
-    public List<SmsSession> getSessionsByCampaign(@RequestParam String id) {
-        return sessionRepo.findByCampaignId(id);
+    // ✅ Lấy session theo campaignId
+    @GetMapping("/sessions")
+    public List<SmsSession> getSessionsByCampaign(@RequestParam String campaignId) {
+        return sessionRepo.findByCampaignId(campaignId);
     }
 }
