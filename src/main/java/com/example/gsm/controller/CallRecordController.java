@@ -3,6 +3,10 @@ package com.example.gsm.controller;
 import com.example.gsm.entity.CallRecord;
 import com.example.gsm.services.CallRecordService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,19 +26,23 @@ public class CallRecordController {
      * Nếu không truyền endDate -> mặc định = startDate
      */
     @GetMapping("/search-created")
-    public List<CallRecord> searchByCreatedAt(
+    public Page<CallRecord> searchByCreatedAt(
             @RequestParam Long customerId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
         if (endDate == null) {
             endDate = startDate;
         }
 
-        // ✅ Convert yyyy-MM-dd -> Instant UTC
         Instant start = startDate.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant end = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
 
-        return callRecordService.searchByCustomerAndCreatedTime(customerId, start, end);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        return callRecordService.searchByCustomerAndCreatedTime(customerId, start, end, pageable);
     }
+
 }

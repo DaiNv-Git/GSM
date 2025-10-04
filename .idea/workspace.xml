@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="add all" />
+    <list default="true" id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="add cosum">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/CallRecordController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/CallRecordController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/entity/repository/CallRecordRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/entity/repository/CallRecordRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/CallRecordService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/CallRecordService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/CallRecordServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/CallRecordServiceImpl.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -39,30 +45,32 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="MavenImportPreferences">
-    <option name="enabledProfiles">
-      <list>
-        <option value="backbase" />
-      </list>
-    </option>
-  </component>
   <component name="MavenRunner">
     <option name="skipTests" value="true" />
   </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="32GlLAaiz9GU9Z0vvjHNOGjvEVb" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">
-    <property name="RequestMappingsPanelOrder0" value="0" />
-    <property name="RequestMappingsPanelOrder1" value="1" />
-    <property name="RequestMappingsPanelWidth0" value="75" />
-    <property name="RequestMappingsPanelWidth1" value="75" />
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="WebServerToolWindowFactoryState" value="false" />
-  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "Spring Boot.GsmApplication.executor": "Run",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
   <component name="RunManager">
     <configuration name="GsmApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
       <module name="GSM" />
@@ -98,6 +106,8 @@
       <workItem from="1759387523542" duration="354000" />
       <workItem from="1759465340536" duration="489000" />
       <workItem from="1759466359399" duration="546000" />
+      <workItem from="1759547905255" duration="1846000" />
+      <workItem from="1759557368164" duration="168000" />
     </task>
     <task id="LOCAL-00001" summary="add config cors">
       <created>1757060156635</created>
@@ -274,14 +284,6 @@
       <option name="project" value="LOCAL" />
       <updated>1758095544861</updated>
     </task>
-    <task id="LOCAL-00026" summary="commit3">
-      <option name="closed" value="true" />
-      <created>1758114631988</created>
-      <option name="number" value="00026" />
-      <option name="presentableId" value="LOCAL-00026" />
-      <option name="project" value="LOCAL" />
-      <updated>1758114631988</updated>
-    </task>
     <task id="LOCAL-00027" summary="commit3">
       <option name="closed" value="true" />
       <created>1758115094212</created>
@@ -451,7 +453,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759466903334</updated>
     </task>
-    <option name="localTasksCounter" value="50" />
+    <task id="LOCAL-00050" summary="add cosum">
+      <option name="closed" value="true" />
+      <created>1759546125063</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1759546125064</updated>
+    </task>
+    <option name="localTasksCounter" value="51" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -487,7 +497,8 @@
     <MESSAGE value="commit4" />
     <MESSAGE value="tách api order" />
     <MESSAGE value="add all" />
-    <option name="LAST_COMMIT_MESSAGE" value="add all" />
+    <MESSAGE value="add cosum" />
+    <option name="LAST_COMMIT_MESSAGE" value="add cosum" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>
