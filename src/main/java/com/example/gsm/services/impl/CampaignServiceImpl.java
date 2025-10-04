@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class CampaignServiceImpl implements CampaignService {
@@ -35,29 +34,48 @@ public class CampaignServiceImpl implements CampaignService {
     }
 
     @Override
-    public String createCampaignFromExcel(
-            MultipartFile file, String name, String type, String content,
-            String autoReply, LocalDateTime endTime,String country) throws IOException {
-
-        SmsCampaign campaign = SmsCampaign.builder()
-                .name(name)
-                .type(type)
-                .createdAt(LocalDateTime.now())
-                .startTime(LocalDateTime.now())
-                .endTime(endTime)
-                .status("NEW")
-                .autoReplyTemplate(autoReply)
-                .country(country)
-                .build();
+    public String create(SmsCampaign campaign) {
+        campaign.setCreatedAt(LocalDateTime.now());
+        campaign.setStartTime(LocalDateTime.now());
+        campaign.setStatus("NEW");
         campaign = campaignRepo.save(campaign);
+        return campaign.getId();
+    }
 
-        // parse excel chỉ lấy số điện thoại, gắn content từ input
-        List<SmsMessageWsk> msgs = parseExcelFile(file, campaign.getId(), content);
+    @Override
+    public SmsCampaign update(String id, SmsCampaign campaign) {
+        return campaignRepo.findById(id).map(existing -> {
+            existing.setName(campaign.getName());
+            existing.setType(campaign.getType());
+            existing.setEndTime(campaign.getEndTime());
+            existing.setAutoReplyTemplate(campaign.getAutoReplyTemplate());
+            existing.setCountry(campaign.getCountry());
+            existing.setStatus(campaign.getStatus());
+            return campaignRepo.save(existing);
+        }).orElse(null);
+    }
+
+    @Override
+    public boolean delete(String id) {
+        if (!campaignRepo.existsById(id)) return false;
+        campaignRepo.deleteById(id);
+        return true;
+    }
+
+    @Override
+    public int addNumbersFromExcel(MultipartFile file, String campaignId, String content) throws IOException {
+        List<SmsMessageWsk> msgs = parseExcelFile(file, campaignId, content);
         messageRepo.saveAll(msgs);
 
-        campaign.setTotalMessages(msgs.size());
-        campaignRepo.save(campaign);
-        return campaign.getId();
+        // update tổng số tin
+        SmsCampaign campaign = campaignRepo.findById(campaignId).orElse(null);
+        if (campaign != null) {
+            int total = (campaign.getTotalMessages() != null ? campaign.getTotalMessages() : 0) + msgs.size();
+            campaign.setTotalMessages(total);
+            campaignRepo.save(campaign);
+        }
+
+        return msgs.size();
     }
 
     private List<SmsMessageWsk> parseExcelFile(MultipartFile file, String campaignId, String content) throws IOException {
@@ -67,7 +85,7 @@ public class CampaignServiceImpl implements CampaignService {
             for (int r = 1; r <= sheet.getLastRowNum(); r++) {
                 Row row = sheet.getRow(r);
                 if (row == null) continue;
-                Cell phoneCell = row.getCell(0); // chỉ lấy cột 0 là SĐT
+                Cell phoneCell = row.getCell(0);
                 if (phoneCell == null) continue;
                 String phone = phoneCell.toString().trim();
                 if (phone.isEmpty()) continue;
@@ -75,7 +93,7 @@ public class CampaignServiceImpl implements CampaignService {
                 SmsMessageWsk m = SmsMessageWsk.builder()
                         .campaignId(campaignId)
                         .phoneNumber(phone)
-                        .content(content) // 👈 gán chung content từ FE
+                        .content(content)
                         .direction("OUTBOUND")
                         .status("WAIT")
                         .createdAt(LocalDateTime.now())
