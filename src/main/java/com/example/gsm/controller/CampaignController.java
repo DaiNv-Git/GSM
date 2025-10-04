@@ -77,23 +77,27 @@ public class CampaignController {
         if (file.getSize() > maxSize) {
             return ResponseEntity.badRequest().body(Map.of("error", "File quá lớn. Kích thước tối đa 10MB"));
         }
-        // check đuôi file
+
         String filename = file.getOriginalFilename();
-        if (!(filename.endsWith(".xls") || filename.endsWith(".xlsx"))) {
-            return ResponseEntity.badRequest().body(Map.of("error", "File không phải Excel"));
-        }
-        // Check MIME type bằng Tika
-        Tika tika = new Tika();
-        String mimeType = tika.detect(file.getInputStream());
-        if (!(mimeType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        String mimeType = new Tika().detect(file.getInputStream());
+
+        boolean isExcelMime = mimeType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 || mimeType.equals("application/vnd.ms-excel")
-                || mimeType.equals("application/x-tika-ooxml"))) {
+                || mimeType.equals("application/x-tika-ooxml")
+                || mimeType.equals("application/zip"); // fallback cho .xlsx bị nhận sai
+
+        boolean isExcelExt = filename.endsWith(".xls") || filename.endsWith(".xlsx");
+
+        if (!(isExcelMime && isExcelExt)) {
             return ResponseEntity.badRequest().body(Map.of("error", "File không hợp lệ, không phải Excel"));
         }
-        int total = campaignService.addNumbersFromExcel(file, campaignId, content);
+
+//        int total = campaignService.addNumbersFromExcel(file, campaignId, content);
+        List<SmsSession> sessions = campaignService.addNumbersFromExcel(file, campaignId, content);
         return ResponseEntity.ok(Map.of(
                 "campaignId", campaignId,
-                "addedMessages", total
+                "totalSessions", sessions.size(),
+                "sessions", sessions
         ));
     }
 
