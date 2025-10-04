@@ -1,6 +1,7 @@
 package com.example.gsm.controller;
 
 import com.example.gsm.dao.request.PhoneUploadRequest;
+import com.example.gsm.dao.response.UploadResponseDto;
 import com.example.gsm.entity.SmsCampaign;
 import com.example.gsm.entity.SmsSession;
 import com.example.gsm.entity.repository.SmsSessionRepository;
@@ -61,28 +62,22 @@ public class CampaignController {
         return ResponseEntity.ok(campaign);
     }
 
-    // ✅ Upload danh sách số điện thoại (JSON array)
-    @PostMapping(
-            value = "/upload"
-    )
+    @PostMapping("/upload")
     public ResponseEntity<?> uploadNumbersToCampaign(@RequestBody PhoneUploadRequest request) throws IOException {
-
         if (request.getPhoneNumbers() == null || request.getPhoneNumbers().isEmpty()) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Danh sách số điện thoại trống"));
         }
 
-        int total = campaignService.addNumbers(
+        List<UploadResponseDto> result = campaignService.addNumbers(
                 request.getPhoneNumbers(),
                 request.getCampaignId(),
                 request.getContent()
         );
 
-        return ResponseEntity.ok(Map.of(
-                "campaignId", request.getCampaignId(),
-                "addedMessages", total
-        ));
+        return ResponseEntity.ok(result);
     }
+
 
     // ✅ Lấy session theo campaignId
     @GetMapping("/sessions")

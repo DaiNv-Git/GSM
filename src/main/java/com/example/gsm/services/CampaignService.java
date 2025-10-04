@@ -1,5 +1,6 @@
 package com.example.gsm.services;
 
+import com.example.gsm.dao.response.UploadResponseDto;
 import com.example.gsm.entity.SmsCampaign;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,6 +16,6 @@ public interface CampaignService {
     SmsCampaign update(String id, SmsCampaign campaign);
     boolean delete(String id);
 
-    int addNumbers(List<String> phoneNumbers, String campaignId, String content) throws IOException;
+    List<UploadResponseDto> addNumbers(List<String> phoneNumbers, String campaignId, String content) throws IOException;
 
 }

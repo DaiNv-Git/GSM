@@ -1,5 +1,6 @@
 package com.example.gsm.services.impl;
 
+import com.example.gsm.dao.response.UploadResponseDto;
 import com.example.gsm.entity.PricingConfig;
 import com.example.gsm.entity.SmsCampaign;
 import com.example.gsm.entity.SmsMessageWsk;
@@ -61,10 +62,10 @@ public class CampaignServiceImpl implements CampaignService {
         campaignRepo.deleteById(id);
         return true;
     }
-
     @Override
-    public int addNumbers(List<String> phoneNumbers, String campaignId, String content) throws IOException {
+    public List<UploadResponseDto> addNumbers(List<String> phoneNumbers, String campaignId, String content) throws IOException {
         List<SmsMessageWsk> msgs = new ArrayList<>();
+        List<UploadResponseDto> responseList = new ArrayList<>();
 
         for (String phone : phoneNumbers) {
             if (phone == null || phone.trim().isEmpty()) continue;
@@ -79,7 +80,9 @@ public class CampaignServiceImpl implements CampaignService {
                     .localMsgId(UUID.randomUUID().toString())
                     .retryCount(0)
                     .build();
+
             msgs.add(m);
+            responseList.add(new UploadResponseDto(campaignId, phone.trim(), content));
         }
 
         messageRepo.saveAll(msgs);
@@ -92,8 +95,9 @@ public class CampaignServiceImpl implements CampaignService {
             campaignRepo.save(campaign);
         }
 
-        return msgs.size();
+        return responseList;
     }
+
    
 
     private List<SmsMessageWsk> parseExcelFile(MultipartFile file, String campaignId, String content) throws IOException {

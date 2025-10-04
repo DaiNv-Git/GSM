@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="add cosum">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/dao/request/PhoneUploadRequest.java" afterDir="false" />
+    <list default="true" id="9253e785-6ca5-499f-9468-57edf3f9bd3d" name="Changes" comment="fix api">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/dao/response/UploadResponseDto.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/CampaignController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/controller/CampaignController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/scheduled/SmsGsmJob.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/scheduled/SmsGsmJob.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/CampaignService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/CampaignService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/CampaignServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/gsm/services/impl/CampaignServiceImpl.java" afterDir="false" />
     </list>
@@ -33,7 +32,6 @@
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GitSEFilterConfiguration">
     <file-type-list>
@@ -66,7 +64,7 @@
     "RequestMappingsPanelWidth1": "75",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "Spring Boot.GsmApplication.executor": "Debug",
-    "git-widget-placeholder": "Rebasing ST",
+    "git-widget-placeholder": "ST",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -289,14 +287,6 @@
       <option name="project" value="LOCAL" />
       <updated>1758095544861</updated>
     </task>
-    <task id="LOCAL-00027" summary="commit3">
-      <option name="closed" value="true" />
-      <created>1758115094212</created>
-      <option name="number" value="00027" />
-      <option name="presentableId" value="LOCAL-00027" />
-      <option name="project" value="LOCAL" />
-      <updated>1758115094212</updated>
-    </task>
     <task id="LOCAL-00028" summary="commit3">
       <option name="closed" value="true" />
       <created>1758116183766</created>
@@ -466,7 +456,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759546125064</updated>
     </task>
-    <option name="localTasksCounter" value="51" />
+    <task id="LOCAL-00051" summary="fix api">
+      <option name="closed" value="true" />
+      <created>1759582512090</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1759582512090</updated>
+    </task>
+    <option name="localTasksCounter" value="52" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -492,7 +490,6 @@
     <MESSAGE value="testweb socket" />
     <MESSAGE value="add new service" />
     <MESSAGE value="fix page" />
-    <MESSAGE value="fix api" />
     <MESSAGE value="commit" />
     <MESSAGE value="commit1" />
     <MESSAGE value="commit2" />
@@ -503,7 +500,8 @@
     <MESSAGE value="tách api order" />
     <MESSAGE value="add all" />
     <MESSAGE value="add cosum" />
-    <option name="LAST_COMMIT_MESSAGE" value="add cosum" />
+    <MESSAGE value="fix api" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix api" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>
