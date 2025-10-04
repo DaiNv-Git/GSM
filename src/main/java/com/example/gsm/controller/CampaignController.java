@@ -1,8 +1,9 @@
 package com.example.gsm.controller;
 
-import com.example.gsm.entity.PricingConfig;
-import com.example.gsm.entity.SmsCampaign;
+import com.example.gsm.entity.SmsSession;
+import com.example.gsm.entity.repository.SmsSessionRepository;
 import com.example.gsm.services.CampaignService;
+import com.example.gsm.services.impl.SmsSessionServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -12,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -19,6 +21,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CampaignController {
     private final CampaignService campaignService;
+    private final SmsSessionRepository sessionRepo;
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadCampaign(
@@ -78,5 +81,8 @@ public class CampaignController {
         return ResponseEntity.ok(campaign);
     }
 
-
+    @GetMapping("/get-all-sessions")
+    public List<SmsSession> getSessionsByCampaign(@RequestParam String id) {
+        return sessionRepo.findByCampaignId(id);
+    }
 }
