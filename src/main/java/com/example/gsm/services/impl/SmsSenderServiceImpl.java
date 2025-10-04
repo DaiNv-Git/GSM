@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -106,7 +107,12 @@ public class SmsSenderServiceImpl {
                 job.put("deviceName", sim.getDeviceName());
                 job.put("comName", sim.getComName());
                 job.put("localMsgId", msg.getLocalMsgId());
-                job.put("sessionId", session.getId()); // 👈 thêm sessionId để GSM service track
+                job.put("sessionId", session.getId());
+                // Thêm các field GSM yêu cầu
+                job.put("campaignStartTime", campaign.getStartTime() != null ? campaign.getStartTime().toString() : null);
+                job.put("campaignEndTime", campaign.getEndTime() != null ? campaign.getEndTime().toString() : null);
+                job.put("smsType", campaign.getType() != null ? campaign.getType() : "ONE_WAY");
+                job.put("timeDuration", calculateDuration(campaign.getStartTime(), campaign.getEndTime()));
 
                 // Push job lên topic
                 messagingTemplate.convertAndSend("/topic/sms-job-topic", job);
@@ -116,6 +122,16 @@ public class SmsSenderServiceImpl {
         });
     }
 
+    /**
+     * Tính thời lượng campaign (phút)
+     */
+    private long calculateDuration(LocalDateTime startTime, LocalDateTime endTime) {
+        if (startTime == null || endTime == null) {
+            return 0L;
+        }
+        Duration duration = Duration.between(startTime, endTime);
+        return duration.toMinutes(); // Trả về số phút
+    }
     /**
      * Lấy danh sách SIM active theo country, lọc SIM đã hết hạn order
      */
