@@ -7,6 +7,7 @@ import com.example.gsm.entity.SmsSession;
 import com.example.gsm.entity.repository.*;
 import com.example.gsm.services.ClaimService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class SmsSenderServiceImpl {
 
     private final ClaimService claimService;
@@ -31,9 +33,13 @@ public class SmsSenderServiceImpl {
 
     public void processBatch() {
         List<SmsMessageWsk> batch = claimService.claimBatch(batchSize, workerId);
-        if (batch.isEmpty()) return;
+        if (batch.isEmpty()) {
+//            log.info("⚠️ Worker {} không claim được tin nào", workerId);
+            return;
+        }
+        log.info("✅ Worker {} claim được {} tin nhắn", workerId, batch.size());
 
-        // Group batch theo country
+// Group batch theo country
         Map<String, List<SmsMessageWsk>> groupedByCountry =
                 batch.stream().collect(Collectors.groupingBy(SmsMessageWsk::getCountry));
 
@@ -42,11 +48,15 @@ public class SmsSenderServiceImpl {
 
             String jobId = UUID.randomUUID().toString();
             String campaignId = messages.get(0).getCampaignId();
+            log.info("🌍 Country={} campaignId={} có {} tin nhắn sẽ xử lý (jobId={})",
+                    country, campaignId, messages.size(), jobId);
 
-            // Lấy tất cả SIM active, sắp xếp giảm dần theo revenue, lọc expire
+            // Lấy tất cả SIM active
             List<Sim> availableSims = selectAvailableSims(country);
+            log.info("🔎 Found {} SIM active cho country={}", availableSims.size(), country);
 
             if (availableSims.isEmpty()) {
+                log.warn("❌ Không có SIM khả dụng cho country={}, campaignId={}", country, campaignId);
                 messages.forEach(msg -> {
                     msg.setStatus("FAILED_NO_SIM");
                     msg.setUpdatedAt(LocalDateTime.now());
@@ -58,16 +68,19 @@ public class SmsSenderServiceImpl {
             // Shuffle tin nhắn để random thứ tự
             Collections.shuffle(messages);
 
-            // Gán SIM tuần tự theo vòng tròn (round-robin)
+            // Gán SIM round-robin
             int simCount = availableSims.size();
             for (int i = 0; i < messages.size(); i++) {
                 SmsMessageWsk msg = messages.get(i);
-                Sim sim = availableSims.get(i % simCount); // vòng tròn
+                Sim sim = availableSims.get(i % simCount);
 
-                // Kiểm tra session active của sim
+                log.info("📩 Assign message={} cho SIM={} ({}), vòng={} ",
+                        msg.getLocalMsgId(), sim.getPhoneNumber(), sim.getDeviceName(), (i % simCount));
+
+                // Check session active
                 SmsSession session = smsSessionRepository.findActiveBySimId(sim.getId());
 
-                // lấy endTime từ campaign
+                // Lấy campaign
                 SmsCampaign campaign = campaignRepo.findById(campaignId).orElseThrow();
 
                 if (session == null) {
@@ -82,10 +95,11 @@ public class SmsSenderServiceImpl {
                     session.setActive(true);
                     session.setLastActivityAt(LocalDateTime.now());
                     smsSessionRepository.save(session);
+                    log.info("➕ Created new session={} cho SIM={}", session.getId(), sim.getPhoneNumber());
                 } else {
-                    // update last activity vì có tin outbound mới
                     session.setLastActivityAt(LocalDateTime.now());
                     smsSessionRepository.save(session);
+                    log.info("♻️ Update lastActivity cho session={} SIM={}", session.getId(), sim.getPhoneNumber());
                 }
 
                 // Gắn sessionId cho message
@@ -94,7 +108,7 @@ public class SmsSenderServiceImpl {
                 msg.setSentAt(LocalDateTime.now());
                 msg.setUpdatedAt(LocalDateTime.now());
 
-                // Tạo job riêng cho tin nhắn này
+                // Tạo job
                 Map<String, Object> job = new HashMap<>();
                 job.put("action", "SEND_GSM_SMS");
                 job.put("jobId", jobId);
@@ -108,18 +122,20 @@ public class SmsSenderServiceImpl {
                 job.put("comName", sim.getComName());
                 job.put("localMsgId", msg.getLocalMsgId());
                 job.put("sessionId", session.getId());
-                // Thêm các field GSM yêu cầu
                 job.put("campaignStartTime", campaign.getStartTime() != null ? campaign.getStartTime().toString() : null);
                 job.put("campaignEndTime", campaign.getEndTime() != null ? campaign.getEndTime().toString() : null);
                 job.put("smsType", campaign.getType() != null ? campaign.getType() : "ONE_WAY");
                 job.put("timeDuration", calculateDuration(campaign.getStartTime(), campaign.getEndTime()));
 
-                // Push job lên topic
+                // Push job
                 messagingTemplate.convertAndSend("/topic/sms-job-topic", job);
+                log.info("📡 Push job={} cho msg={} SIM={} campaign={}", jobId, msg.getLocalMsgId(), sim.getPhoneNumber(), campaignId);
             }
 
             messageRepo.saveAll(messages);
+            log.info("💾 Saved {} messages (campaignId={}, country={})", messages.size(), campaignId, country);
         });
+
     }
 
     /**
