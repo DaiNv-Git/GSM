@@ -6,6 +6,7 @@ import com.example.gsm.services.CampaignService;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +21,10 @@ import java.util.Map;
 public class CampaignController {
     private final CampaignService campaignService;
 
-    @PostMapping("/upload")
+    @PostMapping(
+            value = "/upload",
+            consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }
+    )
     public ResponseEntity<?> uploadCampaign(
             @RequestParam("file") MultipartFile file,
             @RequestParam("name") String name,
